@@ -14,6 +14,53 @@ namespace Infrastructure.Migrations
         protected override void Up(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.CreateTable(
+                name: "Classes",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    Nome = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
+                    Subclasse = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: true),
+                    DadoVida = table.Column<string>(type: "character varying(10)", maxLength: 10, nullable: false),
+                    Deslocamento = table.Column<int>(type: "integer", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Classes", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "Pericias",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    Nome = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
+                    ModificadorAtributo = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Pericias", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "Racas",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    Nome = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
+                    Descricao = table.Column<string>(type: "text", nullable: false),
+                    TipoCriatura = table.Column<string>(type: "character varying(150)", maxLength: 150, nullable: false),
+                    Tamanho = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: false),
+                    Deslocamento = table.Column<int>(type: "integer", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Racas", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "Personagens",
                 columns: table => new
                 {
@@ -21,11 +68,73 @@ namespace Infrastructure.Migrations
                         .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
                     Nome = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
                     Codigo = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
-                    Base64Imagem = table.Column<string>(type: "text", nullable: true)
+                    Base64Imagem = table.Column<string>(type: "text", nullable: true),
+                    IdRaca = table.Column<int>(type: "integer", nullable: false),
+                    Alinhamento = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: true),
+                    Forca = table.Column<int>(type: "integer", nullable: false),
+                    Destreza = table.Column<int>(type: "integer", nullable: false),
+                    Constituicao = table.Column<int>(type: "integer", nullable: false),
+                    Inteligencia = table.Column<int>(type: "integer", nullable: false),
+                    Sabedoria = table.Column<int>(type: "integer", nullable: false),
+                    Carisma = table.Column<int>(type: "integer", nullable: false),
+                    VidaMaxima = table.Column<int>(type: "integer", nullable: false),
+                    VidaAtual = table.Column<int>(type: "integer", nullable: false)
                 },
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_Personagens", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_Personagens_Racas_IdRaca",
+                        column: x => x.IdRaca,
+                        principalTable: "Racas",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "TracosRaciais",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    IdRaca = table.Column<int>(type: "integer", nullable: false),
+                    Nome = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
+                    Descricao = table.Column<string>(type: "text", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_TracosRaciais", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_TracosRaciais_Racas_IdRaca",
+                        column: x => x.IdRaca,
+                        principalTable: "Racas",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "ClassesPersonagens",
+                columns: table => new
+                {
+                    IdPersonagem = table.Column<int>(type: "integer", nullable: false),
+                    IdClasse = table.Column<int>(type: "integer", nullable: false),
+                    Nivel = table.Column<int>(type: "integer", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_ClassesPersonagens", x => new { x.IdPersonagem, x.IdClasse });
+                    table.ForeignKey(
+                        name: "FK_ClassesPersonagens_Classes_IdClasse",
+                        column: x => x.IdClasse,
+                        principalTable: "Classes",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_ClassesPersonagens_Personagens_IdPersonagem",
+                        column: x => x.IdPersonagem,
+                        principalTable: "Personagens",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.CreateTable(
@@ -51,9 +160,65 @@ namespace Infrastructure.Migrations
                 });
 
             migrationBuilder.InsertData(
+                table: "Classes",
+                columns: new[] { "Id", "DadoVida", "Deslocamento", "Nome", "Subclasse" },
+                values: new object[,]
+                {
+                    { 1, "d8", null, "Bruxo", "o Gênio" },
+                    { 2, "d8", null, "Monge", "Caminho do eu astral" }
+                });
+
+            migrationBuilder.InsertData(
+                table: "Pericias",
+                columns: new[] { "Id", "ModificadorAtributo", "Nome" },
+                values: new object[,]
+                {
+                    { 1, "Destreza", "Acrobacia" },
+                    { 2, "Sabedoria", "Adestrar Animais" },
+                    { 3, "Inteligência", "Arcana" },
+                    { 4, "Força", "Atletismo" },
+                    { 5, "Carisma", "Atuação" },
+                    { 6, "Carisma", "Enganação" },
+                    { 7, "Destreza", "Furtividade" },
+                    { 8, "Inteligência", "História" },
+                    { 9, "Carisma", "Intimidação" },
+                    { 10, "Sabedoria", "Intuição" },
+                    { 11, "Inteligência", "Investigação" },
+                    { 12, "Sabedoria", "Medicina" },
+                    { 13, "Inteligência", "Natureza" },
+                    { 14, "Sabedoria", "Percepção" },
+                    { 15, "Carisma", "Persuasão" },
+                    { 16, "Destreza", "Prestidigitação" },
+                    { 17, "Inteligência", "Religião" },
+                    { 18, "Sabedoria", "Sobrevivência" }
+                });
+
+            migrationBuilder.InsertData(
+                table: "Racas",
+                columns: new[] { "Id", "Descricao", "Deslocamento", "Nome", "Tamanho", "TipoCriatura" },
+                values: new object[] { 1, "Eladrin são elfos da Feywild, um reino de beleza perigosa e magia sem limites. Usando essa magia, eladrin pode ir de um lugar para outro em um piscar de olhos, e cada eladrin ressoa com emoções capturadas na feywild na forma de estações – afinidades que afetam o humor e a aparência do eladrin. A estação de um eladrin pode mudar, embora alguns permaneçam em uma estação para sempre. escolha sua estação ou role na tabela de estações eladrin. Seu traço de Transe permite que você mude sua estação. Como outros elfos, os eladrin podem viver mais de 750 anos.", 9, "Eladrin", "Médio", "Humanóide. Você também é considerado um elfo para qualquer pré-requisito ou efeito que exija que você seja um elfo." });
+
+            migrationBuilder.InsertData(
                 table: "Personagens",
-                columns: new[] { "Id", "Base64Imagem", "Codigo", "Nome" },
-                values: new object[] { 1, null, "kairo", "Kairo" });
+                columns: new[] { "Id", "Alinhamento", "Base64Imagem", "Carisma", "Codigo", "Constituicao", "Destreza", "Forca", "IdRaca", "Inteligencia", "Nome", "Sabedoria", "VidaAtual", "VidaMaxima" },
+                values: new object[] { 1, "Caótico e Bom", null, 19, "kairo", 13, 16, 8, 1, 13, "Kairo", 12, 9, 9 });
+
+            migrationBuilder.InsertData(
+                table: "TracosRaciais",
+                columns: new[] { "Id", "Descricao", "IdRaca", "Nome" },
+                values: new object[,]
+                {
+                    { 1, "Você pode ver na penumbra a até 18 metros(60ft) de você como se fosse luz brilhante, e na escuridão como se fosse luz fraca. Você não pode discernir cores na escuridão, apenas tons de cinza.", 1, "Visão no escuro" },
+                    { 2, "Você tem vantagem nos testes de resistência que fizer para evitar ou acabar com a condição de encantado em si mesmo.", 1, "Ancestralidade Feérica" },
+                    { 3, "Como ação bônus, você pode se teletransportar magicamente até 9 metros(30ft) para um espaço desocupado que você possa ver. Você pode usar esse traço um número de vezes igual ao seu bônus de proficiência, e você recupera todos os usos gastos quando terminar um descanso longo. Quando você alcança o 3° nível, seu Passo Feérico ganha um efeito adicional baseado em sua estação; se o efeito exigir um teste de resistência, a CD é igual a 8 + seu bônus de proficiência + seu modificador de Inteligência, Sabedoria ou Carisma (escolha ao selecionar esta raça):\n\nOutono. Imediatamente após você usar seu Passo Feérico, até duas criaturas de sua escolha que você possa ver a até 3 metros(10ft) de você devem ser bem sucedidas em um teste de resistência de Sabedoria ou serão enfeitiçadas por você por 1 minuto, ou até que você ou seus companheiros causem qualquer dano às criaturas.\n\nInverno. Quando você usa seu Passo Feérico, uma criatura de sua escolha que você possa ver a 1,5 metro(5ft) de você antes de se teletransportar deve fazer um teste de resistência de Sabedoria ou ficará com medo de você até o final do seu próximo turno.\n\nPrimavera. Quando você usa seu Passo Feérico, você pode tocar uma criatura voluntária a até 1,5 metros(5ft) de você. Essa criatura então se teletransporta em vez de você, aparecendo em um espaço desocupado de sua escolha que você pode ver a até 9 metros(30ft) de você.\n\nVerão. Imediatamente após você usar seu Passo Feérico, cada criatura de sua escolha que você possa ver a até 1,5 metros(5ft) de você sofre dano de fogo igual ao seu bônus de proficiência.", 1, "Passo Feérico" },
+                    { 4, "Você tem proficiência na perícia Percepção.", 1, "Sentidos Aguçados" },
+                    { 5, "Você não precisa dormir, e magia não pode fazer você dormir. Você pode terminar um descanso longo em 4 horas se passar essas horas in uma meditação como um transe, durante a qual você retém consciência. Sempre que você terminar este transe, você pode mudar sua temporada, e você pode ganhar duas proficiências que você não possui, cada uma com uma arma ou ferramenta de sua escolha selecionada no Livro do Jogador. Você adquire misticamente essas proficiências extraindo-as da memória élfica compartilhada e as mantém até terminar um descanso longo.", 1, "Transe" }
+                });
+
+            migrationBuilder.InsertData(
+                table: "ClassesPersonagens",
+                columns: new[] { "IdClasse", "IdPersonagem", "Nivel" },
+                values: new object[] { 1, 1, 1 });
 
             migrationBuilder.InsertData(
                 table: "HistoriasPersonagens",
@@ -70,6 +235,11 @@ namespace Infrastructure.Migrations
                 });
 
             migrationBuilder.CreateIndex(
+                name: "IX_ClassesPersonagens_IdClasse",
+                table: "ClassesPersonagens",
+                column: "IdClasse");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_HistoriasPersonagens_IdPersonagem",
                 table: "HistoriasPersonagens",
                 column: "IdPersonagem");
@@ -79,16 +249,41 @@ namespace Infrastructure.Migrations
                 table: "Personagens",
                 column: "Codigo",
                 unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Personagens_IdRaca",
+                table: "Personagens",
+                column: "IdRaca");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_TracosRaciais_IdRaca",
+                table: "TracosRaciais",
+                column: "IdRaca");
         }
 
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.DropTable(
+                name: "ClassesPersonagens");
+
+            migrationBuilder.DropTable(
                 name: "HistoriasPersonagens");
 
             migrationBuilder.DropTable(
+                name: "Pericias");
+
+            migrationBuilder.DropTable(
+                name: "TracosRaciais");
+
+            migrationBuilder.DropTable(
+                name: "Classes");
+
+            migrationBuilder.DropTable(
                 name: "Personagens");
+
+            migrationBuilder.DropTable(
+                name: "Racas");
         }
     }
 }

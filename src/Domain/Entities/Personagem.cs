@@ -8,7 +8,8 @@ public class Personagem
     public required string Nome { get; set; }
     public required string Codigo { get; set; }
     public string? Base64Imagem { get; set; }
-    public required string Raca { get; set; }
+    public int IdRaca { get; set; }
+    public Raca Raca { get; set; } = null!;
     public string? Alinhamento { get; set; }
 
     // Atributos base D&D
@@ -26,4 +27,9 @@ public class Personagem
     // Navigation properties
     public ICollection<HistoriaPersonagem> Historias { get; set; } = new List<HistoriaPersonagem>();
     public ICollection<ClassePersonagem> ClassesPersonagens { get; set; } = new List<ClassePersonagem>();
+    public ICollection<PersonagemPericia> PersonagensPericias { get; set; } = new List<PersonagemPericia>();
+    public ICollection<AcaoPersonagem> Acoes { get; set; } = new List<AcaoPersonagem>();
+    public ICollection<PersonagemProficiencia> Proficiencias { get; set; } = new List<PersonagemProficiencia>();
+    public ICollection<PersonagemSalvaguarda> Salvaguardas { get; set; } = new List<PersonagemSalvaguarda>();
+    public ICollection<PersonagemIdioma> PersonagensIdiomas { get; set; } = new List<PersonagemIdioma>();
 }

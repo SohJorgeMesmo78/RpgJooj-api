@@ -11,8 +11,8 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Infrastructure.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20260616204003_AddCharacterHealthFields")]
-    partial class AddCharacterHealthFields
+    [Migration("20260618141740_AddRacialAndManualSkillsRelations")]
+    partial class AddRacialAndManualSkillsRelations
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -37,7 +37,7 @@ namespace Infrastructure.Migrations
                         .HasMaxLength(10)
                         .HasColumnType("character varying(10)");
 
-                    b.Property<int>("Deslocamento")
+                    b.Property<int?>("Deslocamento")
                         .HasColumnType("integer");
 
                     b.Property<string>("Nome")
@@ -58,7 +58,6 @@ namespace Infrastructure.Migrations
                         {
                             Id = 1,
                             DadoVida = "d8",
-                            Deslocamento = 9,
                             Nome = "Bruxo",
                             Subclasse = "o Gênio"
                         },
@@ -66,7 +65,6 @@ namespace Infrastructure.Migrations
                         {
                             Id = 2,
                             DadoVida = "d8",
-                            Deslocamento = 12,
                             Nome = "Monge",
                             Subclasse = "Caminho do eu astral"
                         });
@@ -95,12 +93,6 @@ namespace Infrastructure.Migrations
                             IdPersonagem = 1,
                             IdClasse = 1,
                             Nivel = 1
-                        },
-                        new
-                        {
-                            IdPersonagem = 2,
-                            IdClasse = 2,
-                            Nivel = 5
                         });
                 });
 
@@ -356,15 +348,13 @@ namespace Infrastructure.Migrations
                     b.Property<int>("Forca")
                         .HasColumnType("integer");
 
+                    b.Property<int>("IdRaca")
+                        .HasColumnType("integer");
+
                     b.Property<int>("Inteligencia")
                         .HasColumnType("integer");
 
                     b.Property<string>("Nome")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)");
-
-                    b.Property<string>("Raca")
                         .IsRequired()
                         .HasMaxLength(100)
                         .HasColumnType("character varying(100)");
@@ -383,6 +373,8 @@ namespace Infrastructure.Migrations
                     b.HasIndex("Codigo")
                         .IsUnique();
 
+                    b.HasIndex("IdRaca");
+
                     b.ToTable("Personagens", (string)null);
 
                     b.HasData(
@@ -395,28 +387,199 @@ namespace Infrastructure.Migrations
                             Constituicao = 13,
                             Destreza = 16,
                             Forca = 8,
+                            IdRaca = 1,
                             Inteligencia = 13,
                             Nome = "Kairo",
-                            Raca = "Eladryn",
                             Sabedoria = 12,
                             VidaAtual = 9,
                             VidaMaxima = 9
+                        });
+                });
+
+            modelBuilder.Entity("Domain.Entities.PersonagemPericia", b =>
+                {
+                    b.Property<int>("IdPersonagem")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("IdPericia")
+                        .HasColumnType("integer");
+
+                    b.Property<bool>("IsMaestria")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool>("IsProficiente")
+                        .HasColumnType("boolean");
+
+                    b.HasKey("IdPersonagem", "IdPericia");
+
+                    b.HasIndex("IdPericia");
+
+                    b.ToTable("PersonagensPericias", (string)null);
+
+                    b.HasData(
+                        new
+                        {
+                            IdPersonagem = 1,
+                            IdPericia = 3,
+                            IsMaestria = false,
+                            IsProficiente = true
+                        },
+                        new
+                        {
+                            IdPersonagem = 1,
+                            IdPericia = 8,
+                            IsMaestria = false,
+                            IsProficiente = true
+                        },
+                        new
+                        {
+                            IdPersonagem = 1,
+                            IdPericia = 6,
+                            IsMaestria = false,
+                            IsProficiente = true
+                        },
+                        new
+                        {
+                            IdPersonagem = 1,
+                            IdPericia = 7,
+                            IsMaestria = false,
+                            IsProficiente = true
+                        });
+                });
+
+            modelBuilder.Entity("Domain.Entities.Raca", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Descricao")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<int>("Deslocamento")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Nome")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<string>("Tamanho")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<string>("TipoCriatura")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("character varying(150)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Racas", (string)null);
+
+                    b.HasData(
+                        new
+                        {
+                            Id = 1,
+                            Descricao = "Eladrin são elfos da Feywild, um reino de beleza perigosa e magia sem limites. Usando essa magia, eladrin pode ir de um lugar para outro em um piscar de olhos, e cada eladrin ressoa com emoções capturadas na feywild na forma de estações – afinidades que afetam o humor e a aparência do eladrin. A estação de um eladrin pode mudar, embora alguns permaneçam em uma estação para sempre. escolha sua estação ou role na tabela de estações eladrin. Seu traço de Transe permite que você mude sua estação. Como outros elfos, os eladrin podem viver mais de 750 anos.",
+                            Deslocamento = 9,
+                            Nome = "Eladrin",
+                            Tamanho = "Médio",
+                            TipoCriatura = "Humanóide. Você também é considerado um elfo para qualquer pré-requisito ou efeito que exija que você seja um elfo."
+                        });
+                });
+
+            modelBuilder.Entity("Domain.Entities.TracoRacial", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Descricao")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<int>("IdRaca")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Nome")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("IdRaca");
+
+                    b.ToTable("TracosRaciais", (string)null);
+
+                    b.HasData(
+                        new
+                        {
+                            Id = 1,
+                            Descricao = "Você pode ver na penumbra a até 18 metros(60ft) de você como se fosse luz brilhante, e na escuridão como se fosse luz fraca. Você não pode discernir cores na escuridão, apenas tons de cinza.",
+                            IdRaca = 1,
+                            Nome = "Visão no escuro"
                         },
                         new
                         {
                             Id = 2,
-                            Alinhamento = "Leal e Neutro",
-                            Carisma = 8,
-                            Codigo = "kosj",
-                            Constituicao = 14,
-                            Destreza = 16,
-                            Forca = 12,
-                            Inteligencia = 10,
-                            Nome = "Kosj",
-                            Raca = "Homem-Lagarto",
-                            Sabedoria = 16,
-                            VidaAtual = 38,
-                            VidaMaxima = 38
+                            Descricao = "Você tem vantagem nos testes de resistência que fizer para evitar ou acabar com a condição de encantado em si mesmo.",
+                            IdRaca = 1,
+                            Nome = "Ancestralidade Feérica"
+                        },
+                        new
+                        {
+                            Id = 3,
+                            Descricao = "Como ação bônus, você pode se teletransportar magicamente até 9 metros(30ft) para um espaço desocupado que você possa ver. Você pode usar esse traço um número de vezes igual ao seu bônus de proficiência, e você recupera todos os usos gastos quando terminar um descanso longo. Quando você alcança o 3° nível, seu Passo Feérico ganha um efeito adicional baseado em sua estação; se o efeito exigir um teste de resistência, a CD é igual a 8 + seu bônus de proficiência + seu modificador de Inteligência, Sabedoria ou Carisma (escolha ao selecionar esta raça):\n\nOutono. Imediatamente após você usar seu Passo Feérico, até duas criaturas de sua escolha que você possa ver a até 3 metros(10ft) de você devem ser bem sucedidas em um teste de resistência de Sabedoria ou serão enfeitiçadas por você por 1 minuto, ou até que você ou seus companheiros causem qualquer dano às criaturas.\n\nInverno. Quando você usa seu Passo Feérico, uma criatura de sua escolha que você possa ver a 1,5 metro(5ft) de você antes de se teletransportar deve fazer um teste de resistência de Sabedoria ou ficará com medo de você até o final do seu próximo turno.\n\nPrimavera. Quando você usa seu Passo Feérico, você pode tocar uma criatura voluntária a até 1,5 metros(5ft) de você. Essa criatura então se teletransporta em vez de você, aparecendo em um espaço desocupado de sua escolha que você pode ver a até 9 metros(30ft) de você.\n\nVerão. Imediatamente após você usar seu Passo Feérico, cada criatura de sua escolha que você possa ver a até 1,5 metros(5ft) de você sofre dano de fogo igual ao seu bônus de proficiência.",
+                            IdRaca = 1,
+                            Nome = "Passo Feérico"
+                        },
+                        new
+                        {
+                            Id = 4,
+                            Descricao = "Você tem proficiência na perícia Percepção.",
+                            IdRaca = 1,
+                            Nome = "Sentidos Aguçados"
+                        },
+                        new
+                        {
+                            Id = 5,
+                            Descricao = "Você não precisa dormir, e magia não pode fazer você dormir. Você pode terminar um descanso longo em 4 horas se passar essas horas in uma meditação como um transe, durante a qual você retém consciência. Sempre que você terminar este transe, você pode mudar sua temporada, e você pode ganhar duas proficiências que você não possui, cada uma com uma arma ou ferramenta de sua escolha selecionada no Livro do Jogador. Você adquire misticamente essas proficiências extraindo-as da memória élfica compartilhada e as mantém até terminar um descanso longo.",
+                            IdRaca = 1,
+                            Nome = "Transe"
+                        });
+                });
+
+            modelBuilder.Entity("Domain.Entities.TracoRacialPericia", b =>
+                {
+                    b.Property<int>("IdTracoRacial")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("IdPericia")
+                        .HasColumnType("integer");
+
+                    b.Property<bool>("IsMaestria")
+                        .HasColumnType("boolean");
+
+                    b.HasKey("IdTracoRacial", "IdPericia");
+
+                    b.HasIndex("IdPericia");
+
+                    b.ToTable("TracosRaciaisPericias", (string)null);
+
+                    b.HasData(
+                        new
+                        {
+                            IdTracoRacial = 4,
+                            IdPericia = 14,
+                            IsMaestria = false
                         });
                 });
 
@@ -450,9 +613,76 @@ namespace Infrastructure.Migrations
                     b.Navigation("Personagem");
                 });
 
+            modelBuilder.Entity("Domain.Entities.Personagem", b =>
+                {
+                    b.HasOne("Domain.Entities.Raca", "Raca")
+                        .WithMany("Personagens")
+                        .HasForeignKey("IdRaca")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Raca");
+                });
+
+            modelBuilder.Entity("Domain.Entities.PersonagemPericia", b =>
+                {
+                    b.HasOne("Domain.Entities.Pericia", "Pericia")
+                        .WithMany("PersonagensPericias")
+                        .HasForeignKey("IdPericia")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Domain.Entities.Personagem", "Personagem")
+                        .WithMany("PersonagensPericias")
+                        .HasForeignKey("IdPersonagem")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Pericia");
+
+                    b.Navigation("Personagem");
+                });
+
+            modelBuilder.Entity("Domain.Entities.TracoRacial", b =>
+                {
+                    b.HasOne("Domain.Entities.Raca", "Raca")
+                        .WithMany("TracosRaciais")
+                        .HasForeignKey("IdRaca")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Raca");
+                });
+
+            modelBuilder.Entity("Domain.Entities.TracoRacialPericia", b =>
+                {
+                    b.HasOne("Domain.Entities.Pericia", "Pericia")
+                        .WithMany("TracosRaciaisPericias")
+                        .HasForeignKey("IdPericia")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Domain.Entities.TracoRacial", "TracoRacial")
+                        .WithMany("TracosRaciaisPericias")
+                        .HasForeignKey("IdTracoRacial")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Pericia");
+
+                    b.Navigation("TracoRacial");
+                });
+
             modelBuilder.Entity("Domain.Entities.Classe", b =>
                 {
                     b.Navigation("ClassesPersonagens");
+                });
+
+            modelBuilder.Entity("Domain.Entities.Pericia", b =>
+                {
+                    b.Navigation("PersonagensPericias");
+
+                    b.Navigation("TracosRaciaisPericias");
                 });
 
             modelBuilder.Entity("Domain.Entities.Personagem", b =>
@@ -460,6 +690,20 @@ namespace Infrastructure.Migrations
                     b.Navigation("ClassesPersonagens");
 
                     b.Navigation("Historias");
+
+                    b.Navigation("PersonagensPericias");
+                });
+
+            modelBuilder.Entity("Domain.Entities.Raca", b =>
+                {
+                    b.Navigation("Personagens");
+
+                    b.Navigation("TracosRaciais");
+                });
+
+            modelBuilder.Entity("Domain.Entities.TracoRacial", b =>
+                {
+                    b.Navigation("TracosRaciaisPericias");
                 });
 #pragma warning restore 612, 618
         }

@@ -2,6 +2,7 @@
 using Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -10,9 +11,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Infrastructure.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260618154002_AddActionsAndGeneralProficiencies")]
+    partial class AddActionsAndGeneralProficiencies
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -303,66 +306,6 @@ namespace Infrastructure.Migrations
                         });
                 });
 
-            modelBuilder.Entity("Domain.Entities.Idioma", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("Nome")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("Idiomas", (string)null);
-
-                    b.HasData(
-                        new
-                        {
-                            Id = 1,
-                            Nome = "Comum"
-                        },
-                        new
-                        {
-                            Id = 2,
-                            Nome = "Anão"
-                        },
-                        new
-                        {
-                            Id = 3,
-                            Nome = "Élfico"
-                        },
-                        new
-                        {
-                            Id = 4,
-                            Nome = "Gigante"
-                        },
-                        new
-                        {
-                            Id = 5,
-                            Nome = "Gnomo"
-                        },
-                        new
-                        {
-                            Id = 6,
-                            Nome = "Goblin"
-                        },
-                        new
-                        {
-                            Id = 7,
-                            Nome = "Halfling"
-                        },
-                        new
-                        {
-                            Id = 8,
-                            Nome = "Orc"
-                        });
-                });
-
             modelBuilder.Entity("Domain.Entities.Pericia", b =>
                 {
                     b.Property<int>("Id")
@@ -573,28 +516,6 @@ namespace Infrastructure.Migrations
                             Sabedoria = 12,
                             VidaAtual = 9,
                             VidaMaxima = 9
-                        });
-                });
-
-            modelBuilder.Entity("Domain.Entities.PersonagemIdioma", b =>
-                {
-                    b.Property<int>("IdPersonagem")
-                        .HasColumnType("integer");
-
-                    b.Property<int>("IdIdioma")
-                        .HasColumnType("integer");
-
-                    b.HasKey("IdPersonagem", "IdIdioma");
-
-                    b.HasIndex("IdIdioma");
-
-                    b.ToTable("PersonagensIdiomas", (string)null);
-
-                    b.HasData(
-                        new
-                        {
-                            IdPersonagem = 1,
-                            IdIdioma = 1
                         });
                 });
 
@@ -955,25 +876,6 @@ namespace Infrastructure.Migrations
                     b.Navigation("Raca");
                 });
 
-            modelBuilder.Entity("Domain.Entities.PersonagemIdioma", b =>
-                {
-                    b.HasOne("Domain.Entities.Idioma", "Idioma")
-                        .WithMany("PersonagensIdiomas")
-                        .HasForeignKey("IdIdioma")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("Domain.Entities.Personagem", "Personagem")
-                        .WithMany("PersonagensIdiomas")
-                        .HasForeignKey("IdPersonagem")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Idioma");
-
-                    b.Navigation("Personagem");
-                });
-
             modelBuilder.Entity("Domain.Entities.PersonagemPericia", b =>
                 {
                     b.HasOne("Domain.Entities.Pericia", "Pericia")
@@ -1052,11 +954,6 @@ namespace Infrastructure.Migrations
                     b.Navigation("PericiasDisponiveis");
                 });
 
-            modelBuilder.Entity("Domain.Entities.Idioma", b =>
-                {
-                    b.Navigation("PersonagensIdiomas");
-                });
-
             modelBuilder.Entity("Domain.Entities.Pericia", b =>
                 {
                     b.Navigation("ClassesPericiasDisponiveis");
@@ -1073,8 +970,6 @@ namespace Infrastructure.Migrations
                     b.Navigation("ClassesPersonagens");
 
                     b.Navigation("Historias");
-
-                    b.Navigation("PersonagensIdiomas");
 
                     b.Navigation("PersonagensPericias");
 

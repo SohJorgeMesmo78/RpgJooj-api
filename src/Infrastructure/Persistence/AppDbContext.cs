@@ -10,6 +10,16 @@ public class AppDbContext : DbContext
     public DbSet<Classe> Classes => Set<Classe>();
     public DbSet<ClassePersonagem> ClassesPersonagens => Set<ClassePersonagem>();
     public DbSet<Pericia> Pericias => Set<Pericia>();
+    public DbSet<Raca> Racas => Set<Raca>();
+    public DbSet<TracoRacial> TracosRaciais => Set<TracoRacial>();
+    public DbSet<PersonagemPericia> PersonagensPericias => Set<PersonagemPericia>();
+    public DbSet<TracoRacialPericia> TracosRaciaisPericias => Set<TracoRacialPericia>();
+    public DbSet<AcaoPersonagem> AcoesPersonagens => Set<AcaoPersonagem>();
+    public DbSet<PersonagemProficiencia> PersonagensProficiencias => Set<PersonagemProficiencia>();
+    public DbSet<PersonagemSalvaguarda> PersonagensSalvaguardas => Set<PersonagemSalvaguarda>();
+    public DbSet<ClassePericiaDisponivel> ClassesPericiasDisponiveis => Set<ClassePericiaDisponivel>();
+    public DbSet<Idioma> Idiomas => Set<Idioma>();
+    public DbSet<PersonagemIdioma> PersonagensIdiomas => Set<PersonagemIdioma>();
 
     public AppDbContext(DbContextOptions<AppDbContext> options) : base(options)
     {
@@ -26,8 +36,14 @@ public class AppDbContext : DbContext
             entity.HasKey(p => p.Id);
             entity.Property(p => p.Nome).IsRequired().HasMaxLength(100);
             entity.Property(p => p.Codigo).IsRequired().HasMaxLength(100);
-            entity.Property(p => p.Raca).IsRequired().HasMaxLength(100);
+            entity.Property(p => p.IdRaca).IsRequired();
             entity.Property(p => p.Alinhamento).HasMaxLength(100);
+            
+            // Relationship configuration
+            entity.HasOne(p => p.Raca)
+                .WithMany(r => r.Personagens)
+                .HasForeignKey(p => p.IdRaca)
+                .OnDelete(DeleteBehavior.Restrict);
             entity.Property(p => p.Forca).IsRequired();
             entity.Property(p => p.Destreza).IsRequired();
             entity.Property(p => p.Constituicao).IsRequired();
@@ -62,7 +78,7 @@ public class AppDbContext : DbContext
             entity.Property(c => c.Nome).IsRequired().HasMaxLength(100);
             entity.Property(c => c.Subclasse).HasMaxLength(100);
             entity.Property(c => c.DadoVida).IsRequired().HasMaxLength(10);
-            entity.Property(c => c.Deslocamento).IsRequired();
+            entity.Property(c => c.Deslocamento).IsRequired(false);
         });
 
         // Configure ClassePersonagem entity
@@ -93,13 +109,215 @@ public class AppDbContext : DbContext
             entity.Property(p => p.ModificadorAtributo).IsRequired().HasMaxLength(50);
         });
 
+        // Configure Raca entity
+        modelBuilder.Entity<Raca>(entity =>
+        {
+            entity.ToTable("Racas");
+            entity.HasKey(r => r.Id);
+            entity.Property(r => r.Nome).IsRequired().HasMaxLength(100);
+            entity.Property(r => r.Descricao).IsRequired();
+            entity.Property(r => r.TipoCriatura).IsRequired().HasMaxLength(150);
+            entity.Property(r => r.Tamanho).IsRequired().HasMaxLength(50);
+            entity.Property(r => r.Deslocamento).IsRequired();
+        });
+
+        // Configure TracoRacial entity
+        modelBuilder.Entity<TracoRacial>(entity =>
+        {
+            entity.ToTable("TracosRaciais");
+            entity.HasKey(t => t.Id);
+            entity.Property(t => t.Nome).IsRequired().HasMaxLength(100);
+            entity.Property(t => t.Descricao).IsRequired();
+
+            entity.HasOne(t => t.Raca)
+                .WithMany(r => r.TracosRaciais)
+                .HasForeignKey(t => t.IdRaca)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        // Configure PersonagemPericia entity
+        modelBuilder.Entity<PersonagemPericia>(entity =>
+        {
+            entity.ToTable("PersonagensPericias");
+            entity.HasKey(pp => new { pp.IdPersonagem, pp.IdPericia });
+            entity.Property(pp => pp.Origem).IsRequired().HasMaxLength(150);
+
+            entity.HasOne(pp => pp.Personagem)
+                .WithMany(p => p.PersonagensPericias)
+                .HasForeignKey(pp => pp.IdPersonagem)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(pp => pp.Pericia)
+                .WithMany(p => p.PersonagensPericias)
+                .HasForeignKey(pp => pp.IdPericia)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        // Configure TracoRacialPericia entity
+        modelBuilder.Entity<TracoRacialPericia>(entity =>
+        {
+            entity.ToTable("TracosRaciaisPericias");
+            entity.HasKey(trp => new { trp.IdTracoRacial, trp.IdPericia });
+
+            entity.HasOne(trp => trp.TracoRacial)
+                .WithMany(t => t.TracosRaciaisPericias)
+                .HasForeignKey(trp => trp.IdTracoRacial)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(trp => trp.Pericia)
+                .WithMany(p => p.TracosRaciaisPericias)
+                .HasForeignKey(trp => trp.IdPericia)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        // Configure AcaoPersonagem entity
+        modelBuilder.Entity<AcaoPersonagem>(entity =>
+        {
+            entity.ToTable("AcoesPersonagens");
+            entity.HasKey(ap => ap.Id);
+            entity.Property(ap => ap.Nome).IsRequired().HasMaxLength(100);
+            entity.Property(ap => ap.TipoAcao).IsRequired().HasMaxLength(50);
+            entity.Property(ap => ap.Alcance).IsRequired().HasMaxLength(50);
+            entity.Property(ap => ap.BonusAcerto).IsRequired().HasMaxLength(50);
+            entity.Property(ap => ap.Dano).IsRequired().HasMaxLength(50);
+            entity.Property(ap => ap.TipoDano).IsRequired().HasMaxLength(50);
+            entity.Property(ap => ap.Descricao).HasMaxLength(500);
+
+            entity.HasOne(ap => ap.Personagem)
+                .WithMany(p => p.Acoes)
+                .HasForeignKey(ap => ap.IdPersonagem)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        // Configure PersonagemProficiencia entity
+        modelBuilder.Entity<PersonagemProficiencia>(entity =>
+        {
+            entity.ToTable("PersonagensProficiencias");
+            entity.HasKey(pp => pp.Id);
+            entity.Property(pp => pp.Tipo).IsRequired().HasMaxLength(50);
+            entity.Property(pp => pp.Nome).IsRequired().HasMaxLength(150);
+            entity.Property(pp => pp.Origem).IsRequired().HasMaxLength(150);
+
+            entity.HasOne(pp => pp.Personagem)
+                .WithMany(p => p.Proficiencias)
+                .HasForeignKey(pp => pp.IdPersonagem)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        // Configure PersonagemSalvaguarda entity
+        modelBuilder.Entity<PersonagemSalvaguarda>(entity =>
+        {
+            entity.ToTable("PersonagensSalvaguardas");
+            entity.HasKey(ps => new { ps.IdPersonagem, ps.Atributo });
+            entity.Property(ps => ps.Atributo).IsRequired().HasMaxLength(50);
+
+            entity.HasOne(ps => ps.Personagem)
+                .WithMany(p => p.Salvaguardas)
+                .HasForeignKey(ps => ps.IdPersonagem)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        // Configure ClassePericiaDisponivel entity
+        modelBuilder.Entity<ClassePericiaDisponivel>(entity =>
+        {
+            entity.ToTable("ClassesPericiasDisponiveis");
+            entity.HasKey(cpd => new { cpd.IdClasse, cpd.IdPericia });
+
+            entity.HasOne(cpd => cpd.Classe)
+                .WithMany(c => c.PericiasDisponiveis)
+                .HasForeignKey(cpd => cpd.IdClasse)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(cpd => cpd.Pericia)
+                .WithMany(p => p.ClassesPericiasDisponiveis)
+                .HasForeignKey(cpd => cpd.IdPericia)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        // Configure Idioma entity
+        modelBuilder.Entity<Idioma>(entity =>
+        {
+            entity.ToTable("Idiomas");
+            entity.HasKey(i => i.Id);
+            entity.Property(i => i.Nome).IsRequired().HasMaxLength(100);
+        });
+
+        // Configure PersonagemIdioma entity
+        modelBuilder.Entity<PersonagemIdioma>(entity =>
+        {
+            entity.ToTable("PersonagensIdiomas");
+            entity.HasKey(pi => new { pi.IdPersonagem, pi.IdIdioma });
+
+            entity.HasOne(pi => pi.Personagem)
+                .WithMany(p => p.PersonagensIdiomas)
+                .HasForeignKey(pi => pi.IdPersonagem)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(pi => pi.Idioma)
+                .WithMany(i => i.PersonagensIdiomas)
+                .HasForeignKey(pi => pi.IdIdioma)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
         // Seeding Classes
         modelBuilder.Entity<Classe>().HasData(
-            new Classe { Id = 1, Nome = "Bruxo", Subclasse = "o Gênio", DadoVida = "d8", Deslocamento = 9 },
-            new Classe { Id = 2, Nome = "Monge", Subclasse = "Caminho do eu astral", DadoVida = "d8", Deslocamento = 12 }
+            new Classe { Id = 1, Nome = "Bruxo", Subclasse = "o Gênio", DadoVida = "d8", Deslocamento = null, QtdPericiasEscolha = 2 },
+            new Classe { Id = 2, Nome = "Monge", Subclasse = "Caminho do eu astral", DadoVida = "d8", Deslocamento = null, QtdPericiasEscolha = 2 }
         );
 
-        // Seeding Character: Kairo (Id = 1) & Kosj (Id = 2)
+        // Seeding Racas
+        modelBuilder.Entity<Raca>().HasData(
+            new Raca
+            {
+                Id = 1,
+                Nome = "Eladrin",
+                Descricao = "Eladrin são elfos da Feywild, um reino de beleza perigosa e magia sem limites. Usando essa magia, eladrin pode ir de um lugar para outro em um piscar de olhos, e cada eladrin ressoa com emoções capturadas na feywild na forma de estações – afinidades que afetam o humor e a aparência do eladrin. A estação de um eladrin pode mudar, embora alguns permaneçam em uma estação para sempre. escolha sua estação ou role na tabela de estações eladrin. Seu traço de Transe permite que você mude sua estação. Como outros elfos, os eladrin podem viver mais de 750 anos.",
+                TipoCriatura = "Humanóide. Você também é considerado um elfo para qualquer pré-requisito ou efeito que exija que você seja um elfo.",
+                Tamanho = "Médio",
+                Deslocamento = 9
+            }
+        );
+
+        // Seeding TracosRaciais
+        modelBuilder.Entity<TracoRacial>().HasData(
+            new TracoRacial
+            {
+                Id = 1,
+                IdRaca = 1,
+                Nome = "Visão no escuro",
+                Descricao = "Você pode ver na penumbra a até 18 metros(60ft) de você como se fosse luz brilhante, e na escuridão como se fosse luz fraca. Você não pode discernir cores na escuridão, apenas tons de cinza."
+            },
+            new TracoRacial
+            {
+                Id = 2,
+                IdRaca = 1,
+                Nome = "Ancestralidade Feérica",
+                Descricao = "Você tem vantagem nos testes de resistência que fizer para evitar ou acabar com a condição de encantado em si mesmo."
+            },
+            new TracoRacial
+            {
+                Id = 3,
+                IdRaca = 1,
+                Nome = "Passo Feérico",
+                Descricao = "Como ação bônus, você pode se teletransportar magicamente até 9 metros(30ft) para um espaço desocupado que você possa ver. Você pode usar esse traço um número de vezes igual ao seu bônus de proficiência, e você recupera todos os usos gastos quando terminar um descanso longo. Quando você alcança o 3° nível, seu Passo Feérico ganha um efeito adicional baseado em sua estação; se o efeito exigir um teste de resistência, a CD é igual a 8 + seu bônus de proficiência + seu modificador de Inteligência, Sabedoria ou Carisma (escolha ao selecionar esta raça):\n\nOutono. Imediatamente após você usar seu Passo Feérico, até duas criaturas de sua escolha que você possa ver a até 3 metros(10ft) de você devem ser bem sucedidas em um teste de resistência de Sabedoria ou serão enfeitiçadas por você por 1 minuto, ou até que você ou seus companheiros causem qualquer dano às criaturas.\n\nInverno. Quando você usa seu Passo Feérico, uma criatura de sua escolha que você possa ver a 1,5 metro(5ft) de você antes de se teletransportar deve fazer um teste de resistência de Sabedoria ou ficará com medo de você até o final do seu próximo turno.\n\nPrimavera. Quando você usa seu Passo Feérico, você pode tocar uma criatura voluntária a até 1,5 metros(5ft) de você. Essa criatura então se teletransporta em vez de você, aparecendo em um espaço desocupado de sua escolha que você pode ver a até 9 metros(30ft) de você.\n\nVerão. Imediatamente após você usar seu Passo Feérico, cada criatura de sua escolha que você possa ver a até 1,5 metros(5ft) de você sofre dano de fogo igual ao seu bônus de proficiência."
+            },
+            new TracoRacial
+            {
+                Id = 4,
+                IdRaca = 1,
+                Nome = "Sentidos Aguçados",
+                Descricao = "Você tem proficiência na perícia Percepção."
+            },
+            new TracoRacial
+            {
+                Id = 5,
+                IdRaca = 1,
+                Nome = "Transe",
+                Descricao = "Você não precisa dormir, e magia não pode fazer você dormir. Você pode terminar um descanso longo em 4 horas se passar essas horas in uma meditação como um transe, durante a qual você retém consciência. Sempre que você terminar este transe, você pode mudar sua temporada, e você pode ganhar duas proficiências que você não possui, cada uma com uma arma ou ferramenta de sua escolha selecionada no Livro do Jogador. Você adquire misticamente essas proficiências extraindo-as da memória élfica compartilhada e as mantém até terminar um descanso longo."
+            }
+        );
+
+        // Seeding Character: Kairo (Id = 1)
         modelBuilder.Entity<Personagem>().HasData(
             new Personagem
             {
@@ -107,7 +325,7 @@ public class AppDbContext : DbContext
                 Nome = "Kairo",
                 Codigo = "kairo",
                 Base64Imagem = null,
-                Raca = "Eladryn",
+                IdRaca = 1, // Eladrin
                 Alinhamento = "Caótico e Bom",
                 Forca = 8,
                 Destreza = 16,
@@ -117,30 +335,12 @@ public class AppDbContext : DbContext
                 Carisma = 19,
                 VidaMaxima = 9,
                 VidaAtual = 9
-            },
-            new Personagem
-            {
-                Id = 2,
-                Nome = "Kosj",
-                Codigo = "kosj",
-                Base64Imagem = null,
-                Raca = "Homem-Lagarto",
-                Alinhamento = "Leal e Neutro",
-                Forca = 12,
-                Destreza = 16,
-                Constituicao = 14,
-                Inteligencia = 10,
-                Sabedoria = 16,
-                Carisma = 8,
-                VidaMaxima = 38,
-                VidaAtual = 38
             }
         );
 
         // Seeding ClassesPersonagens
         modelBuilder.Entity<ClassePersonagem>().HasData(
-            new ClassePersonagem { IdPersonagem = 1, IdClasse = 1, Nivel = 1 },
-            new ClassePersonagem { IdPersonagem = 2, IdClasse = 2, Nivel = 5 }
+            new ClassePersonagem { IdPersonagem = 1, IdClasse = 1, Nivel = 1 }
         );
 
         // Seeding Pericias
@@ -281,6 +481,77 @@ Aquele era o seu Livro das Sombras. Ao folhear as páginas rúnicas, Kairo encon
 Agora, aos 20 anos, armado com seu sorriso extravagante, seu fiel familiar Shift, a magia trovejante de um Gênio que virou um amigo rabugento e uma promessa de dedinho que ecoava pelo multiverso, Kairo estava pronto para deixar Ozenes e abraçar seu destiny.
 """
             }
+        );
+
+        // Seeding TracoRacialPericia
+        modelBuilder.Entity<TracoRacialPericia>().HasData(
+            // Sentidos Aguçados (Id = 4) dá proficiência em Percepção (Id = 14)
+            new TracoRacialPericia { IdTracoRacial = 4, IdPericia = 14, IsMaestria = false }
+        );
+
+        // Seeding ClassePericiaDisponivel (Bruxo pode escolher entre as seguintes)
+        modelBuilder.Entity<ClassePericiaDisponivel>().HasData(
+            new ClassePericiaDisponivel { IdClasse = 1, IdPericia = 3 },  // Arcana
+            new ClassePericiaDisponivel { IdClasse = 1, IdPericia = 6 },  // Enganação
+            new ClassePericiaDisponivel { IdClasse = 1, IdPericia = 8 },  // História
+            new ClassePericiaDisponivel { IdClasse = 1, IdPericia = 9 },  // Intimidação
+            new ClassePericiaDisponivel { IdClasse = 1, IdPericia = 11 }, // Investigação
+            new ClassePericiaDisponivel { IdClasse = 1, IdPericia = 13 }, // Natureza
+            new ClassePericiaDisponivel { IdClasse = 1, IdPericia = 17 }  // Religião
+        );
+
+        // Seeding PersonagemPericia para Kairo (IdPersonagem = 1)
+        modelBuilder.Entity<PersonagemPericia>().HasData(
+            new PersonagemPericia { IdPersonagem = 1, IdPericia = 3, IsProficiente = true, IsMaestria = false, Origem = "Classe (Bruxo)" },
+            new PersonagemPericia { IdPersonagem = 1, IdPericia = 6, IsProficiente = true, IsMaestria = false, Origem = "Classe (Bruxo)" },
+            new PersonagemPericia { IdPersonagem = 1, IdPericia = 8, IsProficiente = true, IsMaestria = false, Origem = "Antecedente (Charlatão)" },
+            new PersonagemPericia { IdPersonagem = 1, IdPericia = 7, IsProficiente = true, IsMaestria = false, Origem = "Antecedente (Charlatão)" }
+        );
+
+        // Seeding PersonagemSalvaguarda para Kairo
+        modelBuilder.Entity<PersonagemSalvaguarda>().HasData(
+            new PersonagemSalvaguarda { IdPersonagem = 1, Atributo = "Sabedoria", IsProficiente = true },
+            new PersonagemSalvaguarda { IdPersonagem = 1, Atributo = "Carisma", IsProficiente = true }
+        );
+
+        // Seeding PersonagemProficiencia para Kairo
+        modelBuilder.Entity<PersonagemProficiencia>().HasData(
+            new PersonagemProficiencia { Id = 1, IdPersonagem = 1, Tipo = "Arma", Nome = "Armas simples", Origem = "Classe (Bruxo)" },
+            new PersonagemProficiencia { Id = 2, IdPersonagem = 1, Tipo = "Armadura", Nome = "Armaduras leves", Origem = "Classe (Bruxo)" },
+            new PersonagemProficiencia { Id = 3, IdPersonagem = 1, Tipo = "Ferramenta", Nome = "Nenhuma", Origem = "Classe (Bruxo)" }
+        );
+
+        // Seeding AcaoPersonagem para Kairo
+        modelBuilder.Entity<AcaoPersonagem>().HasData(
+            new AcaoPersonagem
+            {
+                Id = 1,
+                IdPersonagem = 1,
+                Nome = "Soco",
+                TipoAcao = "Ação",
+                Alcance = "1.5m / 5ft",
+                BonusAcerto = "+1",
+                Dano = "1",
+                TipoDano = "Impacto",
+                Descricao = "Ataque desarmado básico."
+            }
+        );
+
+        // Seeding Idiomas
+        modelBuilder.Entity<Idioma>().HasData(
+            new Idioma { Id = 1, Nome = "Comum" },
+            new Idioma { Id = 2, Nome = "Anão" },
+            new Idioma { Id = 3, Nome = "Élfico" },
+            new Idioma { Id = 4, Nome = "Gigante" },
+            new Idioma { Id = 5, Nome = "Gnomo" },
+            new Idioma { Id = 6, Nome = "Goblin" },
+            new Idioma { Id = 7, Nome = "Halfling" },
+            new Idioma { Id = 8, Nome = "Orc" }
+        );
+
+        // Seeding PersonagemIdioma para Kairo
+        modelBuilder.Entity<PersonagemIdioma>().HasData(
+            new PersonagemIdioma { IdPersonagem = 1, IdIdioma = 1 }
         );
     }
 }

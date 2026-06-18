@@ -61,7 +61,7 @@ app.MapGet("/api/personagens", async (AppDbContext db) =>
             p.Id,
             p.Nome,
             p.Codigo,
-            p.Raca,
+            Raca = p.Raca.Nome,
             Classe = p.ClassesPersonagens.OrderBy(cp => cp.IdClasse).Select(cp => cp.Classe.Nome).FirstOrDefault() ?? "Sem Classe",
             Subclasse = p.ClassesPersonagens.OrderBy(cp => cp.IdClasse).Select(cp => cp.Classe.Subclasse).FirstOrDefault(),
             Nivel = p.ClassesPersonagens.Sum(cp => cp.Nivel),
@@ -77,7 +77,16 @@ app.MapGet("/api/personagens/{codigo}", async (string codigo, AppDbContext db) =
     var personagem = await db.Personagens
         .Include(p => p.Historias.OrderBy(h => h.Capitulo))
         .Include(p => p.ClassesPersonagens)
-        .ThenInclude(cp => cp.Classe)
+            .ThenInclude(cp => cp.Classe)
+        .Include(p => p.PersonagensPericias)
+        .Include(p => p.Raca)
+            .ThenInclude(r => r.TracosRaciais)
+                .ThenInclude(t => t.TracosRaciaisPericias)
+        .Include(p => p.Acoes)
+        .Include(p => p.Proficiencias)
+        .Include(p => p.Salvaguardas)
+        .Include(p => p.PersonagensIdiomas)
+            .ThenInclude(pi => pi.Idioma)
         .FirstOrDefaultAsync(p => p.Codigo.ToLower() == codigo.ToLower());
 
     if (personagem == null)
@@ -85,13 +94,65 @@ app.MapGet("/api/personagens/{codigo}", async (string codigo, AppDbContext db) =
         return Results.NotFound(new { Message = $"Personagem com código '{codigo}' não encontrado." });
     }
 
+    var todasPericias = await db.Pericias.OrderBy(p => p.Nome).ToListAsync();
+
+    var nivelTotal = personagem.ClassesPersonagens.Sum(cp => cp.Nivel);
+    var bonusProficiencia = 2 + (nivelTotal - 1) / 4;
+
+    int ObterModificador(int valor) => (int)Math.Floor((valor - 10) / 2.0);
+
+    var mods = new Dictionary<string, int>
+    {
+        { "Força", ObterModificador(personagem.Forca) },
+        { "Destreza", ObterModificador(personagem.Destreza) },
+        { "Constituição", ObterModificador(personagem.Constituicao) },
+        { "Inteligência", ObterModificador(personagem.Inteligencia) },
+        { "Sabedoria", ObterModificador(personagem.Sabedoria) },
+        { "Carisma", ObterModificador(personagem.Carisma) }
+    };
+
+    var salvaguardasObj = new[] { "Força", "Destreza", "Constituição", "Inteligência", "Sabedoria", "Carisma" }.Select(attr =>
+    {
+        var dbKey = attr switch
+        {
+            "Força" => "Forca",
+            "Constituição" => "Constituicao",
+            "Inteligência" => "Inteligencia",
+            _ => attr
+        };
+        var isProf = personagem.Salvaguardas.Any(s => s.Atributo.Equals(dbKey, StringComparison.OrdinalIgnoreCase) && s.IsProficiente);
+        var mod = mods[attr];
+        var valor = mod + (isProf ? bonusProficiencia : 0);
+        return new
+        {
+            Atributo = attr,
+            Modificador = mod,
+            IsProficiente = isProf,
+            Valor = valor
+        };
+    }).ToList();
+
     return Results.Ok(new
     {
         personagem.Id,
         personagem.Nome,
         personagem.Codigo,
         personagem.Base64Imagem,
-        personagem.Raca,
+        Raca = personagem.Raca.Nome,
+        RacaInfo = new
+        {
+            personagem.Raca.Nome,
+            personagem.Raca.Descricao,
+            personagem.Raca.TipoCriatura,
+            personagem.Raca.Tamanho,
+            personagem.Raca.Deslocamento
+        },
+        TracosRaciais = personagem.Raca.TracosRaciais.Select(t => new
+        {
+            t.Id,
+            t.Nome,
+            t.Descricao
+        }).ToList(),
         Classe = personagem.ClassesPersonagens.OrderBy(cp => cp.IdClasse).Select(cp => cp.Classe.Nome).FirstOrDefault() ?? "Sem Classe",
         Subclasse = personagem.ClassesPersonagens.OrderBy(cp => cp.IdClasse).Select(cp => cp.Classe.Subclasse).FirstOrDefault(),
         Nivel = personagem.ClassesPersonagens.Sum(cp => cp.Nivel),
@@ -118,7 +179,63 @@ app.MapGet("/api/personagens/{codigo}", async (string codigo, AppDbContext db) =
             h.Capitulo,
             h.TituloCapitulo,
             h.Texto
-        })
+        }),
+        Pericias = todasPericias.Select(per =>
+        {
+            var pp = personagem.PersonagensPericias.FirstOrDefault(x => x.IdPericia == per.Id);
+            var isProficienteManual = pp?.IsProficiente ?? false;
+            var isMaestriaManual = pp?.IsMaestria ?? false;
+
+            var tracoRacialQueDaPericia = personagem.Raca.TracosRaciais
+                .FirstOrDefault(t => t.TracosRaciaisPericias.Any(trp => trp.IdPericia == per.Id));
+            var isProficienteRacial = tracoRacialQueDaPericia != null;
+            
+            var isMaestriaRacial = tracoRacialQueDaPericia != null && tracoRacialQueDaPericia.TracosRaciaisPericias
+                .Any(trp => trp.IdPericia == per.Id && trp.IsMaestria);
+
+            var isProf = isProficienteManual || isProficienteRacial;
+            var isMaestria = isMaestriaManual || isMaestriaRacial;
+
+            string? origem = null;
+            if (isProficienteRacial)
+            {
+                origem = $"Raça ({personagem.Raca.Nome}) - Traço ({tracoRacialQueDaPericia!.Nome})";
+            }
+            else if (isProficienteManual)
+            {
+                origem = pp?.Origem;
+            }
+
+            return new
+            {
+                Id = per.Id,
+                Nome = per.Nome,
+                ModificadorAtributo = per.ModificadorAtributo,
+                Proficiente = isProf,
+                Maestria = isMaestria,
+                Origem = origem
+            };
+        }).ToList(),
+        Salvaguardas = salvaguardasObj,
+        Acoes = personagem.Acoes.Select(a => new
+        {
+            a.Id,
+            a.Nome,
+            a.TipoAcao,
+            a.Alcance,
+            a.BonusAcerto,
+            a.Dano,
+            a.TipoDano,
+            a.Descricao
+        }).ToList(),
+        Proficiencias = personagem.Proficiencias.Select(p => new
+        {
+            p.Id,
+            p.Tipo,
+            p.Nome,
+            p.Origem
+        }).ToList(),
+        Idiomas = personagem.PersonagensIdiomas.Select(pi => pi.Idioma.Nome).ToList()
     });
 })
 .WithName("GetPersonagemByCodigo");
@@ -145,12 +262,28 @@ app.MapPost("/api/personagens", async (PersonagemDto dto, AppDbContext db) =>
         return Results.Conflict(new { Message = $"Já existe um personagem com o código '{dto.Codigo}'." });
     }
 
+    var racaDb = await db.Racas.FirstOrDefaultAsync(r => r.Nome.ToLower() == dto.Raca.ToLower());
+    if (racaDb == null)
+    {
+        // Se não existir, podemos criar uma raça padrão para não quebrar cadastros antigos
+        racaDb = new Raca
+        {
+            Nome = dto.Raca,
+            Descricao = $"Raça {dto.Raca} criada automaticamente.",
+            TipoCriatura = "Humanóide",
+            Tamanho = "Médio",
+            Deslocamento = 9
+        };
+        db.Racas.Add(racaDb);
+        await db.SaveChangesAsync();
+    }
+
     var personagem = new Personagem
     {
         Nome = dto.Nome,
         Codigo = dto.Codigo,
         Base64Imagem = dto.Base64Imagem,
-        Raca = dto.Raca,
+        IdRaca = racaDb.Id,
         Alinhamento = dto.Alinhamento,
         Forca = dto.Forca,
         Destreza = dto.Destreza,
@@ -174,7 +307,7 @@ app.MapPost("/api/personagens", async (PersonagemDto dto, AppDbContext db) =>
             Nome = dto.Classe,
             Subclasse = dto.Subclasse,
             DadoVida = "d8",
-            Deslocamento = 9
+            Deslocamento = null
         };
         db.Classes.Add(classeDb);
         await db.SaveChangesAsync();
@@ -195,7 +328,7 @@ app.MapPost("/api/personagens", async (PersonagemDto dto, AppDbContext db) =>
         personagem.Nome,
         personagem.Codigo,
         personagem.Base64Imagem,
-        personagem.Raca,
+        Raca = racaDb.Nome,
         Classe = classeDb.Nome,
         Subclasse = classeDb.Subclasse,
         Nivel = cp.Nivel,
