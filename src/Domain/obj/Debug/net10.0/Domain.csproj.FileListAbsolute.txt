@@ -9,3 +9,4 @@ d:\HD\Projetos\RpgJooj\RpgJooj-api\src\Domain\obj\Debug\net10.0\Domain.dll
 d:\HD\Projetos\RpgJooj\RpgJooj-api\src\Domain\obj\Debug\net10.0\refint\Domain.dll
 d:\HD\Projetos\RpgJooj\RpgJooj-api\src\Domain\obj\Debug\net10.0\Domain.pdb
 d:\HD\Projetos\RpgJooj\RpgJooj-api\src\Domain\obj\Debug\net10.0\ref\Domain.dll
+D:\HD\Projetos\RpgJooj\RpgJooj-api\src\Domain\obj\Debug\net10.0\Domain.sourcelink.json

@@ -15,3 +15,4 @@ d:\HD\Projetos\RpgJooj\RpgJooj-api\src\Application\obj\Debug\net10.0\Application
 d:\HD\Projetos\RpgJooj\RpgJooj-api\src\Application\obj\Debug\net10.0\refint\Application.dll
 d:\HD\Projetos\RpgJooj\RpgJooj-api\src\Application\obj\Debug\net10.0\Application.pdb
 d:\HD\Projetos\RpgJooj\RpgJooj-api\src\Application\obj\Debug\net10.0\ref\Application.dll
+D:\HD\Projetos\RpgJooj\RpgJooj-api\src\Application\obj\Debug\net10.0\Application.sourcelink.json

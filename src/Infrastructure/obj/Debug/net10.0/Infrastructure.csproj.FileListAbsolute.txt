@@ -13,3 +13,4 @@ d:\HD\Projetos\RpgJooj\RpgJooj-api\src\Infrastructure\obj\Debug\net10.0\Infrastr
 d:\HD\Projetos\RpgJooj\RpgJooj-api\src\Infrastructure\obj\Debug\net10.0\refint\Infrastructure.dll
 d:\HD\Projetos\RpgJooj\RpgJooj-api\src\Infrastructure\obj\Debug\net10.0\Infrastructure.pdb
 d:\HD\Projetos\RpgJooj\RpgJooj-api\src\Infrastructure\obj\Debug\net10.0\ref\Infrastructure.dll
+D:\HD\Projetos\RpgJooj\RpgJooj-api\src\Infrastructure\obj\Debug\net10.0\Infrastructure.sourcelink.json

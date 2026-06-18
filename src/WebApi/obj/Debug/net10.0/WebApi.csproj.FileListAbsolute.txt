@@ -126,3 +126,4 @@ d:\HD\Projetos\RpgJooj\RpgJooj-api\src\WebAPI\obj\Debug\net10.0\refint\WebApi.dl
 d:\HD\Projetos\RpgJooj\RpgJooj-api\src\WebAPI\obj\Debug\net10.0\WebApi.pdb
 d:\HD\Projetos\RpgJooj\RpgJooj-api\src\WebAPI\obj\Debug\net10.0\WebApi.genruntimeconfig.cache
 d:\HD\Projetos\RpgJooj\RpgJooj-api\src\WebAPI\obj\Debug\net10.0\ref\WebApi.dll
+D:\HD\Projetos\RpgJooj\RpgJooj-api\src\WebApi\obj\Debug\net10.0\WebApi.sourcelink.json
