@@ -1,8 +1,8 @@
 {
   "version": 2,
-  "dgSpecHash": "Px6pY6Xh1L0=",
+  "dgSpecHash": "/4X66kkIbfI=",
   "success": true,
-  "projectFilePath": "D:\\HD\\Projetos\\RpgJooj\\RpgJooj-api\\src\\WebApi\\WebApi.csproj",
+  "projectFilePath": "D:\\HD\\Projetos\\RpgJooj\\RpgJooj-api\\src\\WebAPI\\WebApi.csproj",
   "expectedPackageFiles": [
     "C:\\Users\\Jorge\\.nuget\\packages\\humanizer.core\\2.14.1\\humanizer.core.2.14.1.nupkg.sha512",
     "C:\\Users\\Jorge\\.nuget\\packages\\microsoft.aspnetcore.openapi\\10.0.5\\microsoft.aspnetcore.openapi.10.0.5.nupkg.sha512",

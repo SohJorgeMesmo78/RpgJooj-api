@@ -55,7 +55,9 @@ app.MapGet("/api/personagens", async (AppDbContext db) =>
 {
     var personagens = await db.Personagens
         .Include(p => p.ClassesPersonagens)
-        .ThenInclude(cp => cp.Classe)
+            .ThenInclude(cp => cp.Classe)
+        .Include(p => p.ClassesPersonagens)
+            .ThenInclude(cp => cp.Subclasse)
         .Select(p => new
         {
             p.Id,
@@ -63,7 +65,7 @@ app.MapGet("/api/personagens", async (AppDbContext db) =>
             p.Codigo,
             Raca = p.Raca.Nome,
             Classe = p.ClassesPersonagens.OrderBy(cp => cp.IdClasse).Select(cp => cp.Classe.Nome).FirstOrDefault() ?? "Sem Classe",
-            Subclasse = p.ClassesPersonagens.OrderBy(cp => cp.IdClasse).Select(cp => cp.Classe.Subclasse).FirstOrDefault(),
+            Subclasse = p.ClassesPersonagens.OrderBy(cp => cp.IdClasse).Select(cp => cp.Subclasse != null ? cp.Subclasse.Nome : null).FirstOrDefault(),
             Nivel = p.ClassesPersonagens.Sum(cp => cp.Nivel),
             p.Base64Imagem
         })
@@ -78,6 +80,9 @@ app.MapGet("/api/personagens/{codigo}", async (string codigo, AppDbContext db) =
         .Include(p => p.Historias.OrderBy(h => h.Capitulo))
         .Include(p => p.ClassesPersonagens)
             .ThenInclude(cp => cp.Classe)
+                .ThenInclude(c => c.Progressoes)
+        .Include(p => p.ClassesPersonagens)
+            .ThenInclude(cp => cp.Subclasse)
         .Include(p => p.PersonagensPericias)
         .Include(p => p.Raca)
             .ThenInclude(r => r.TracosRaciais)
@@ -87,6 +92,8 @@ app.MapGet("/api/personagens/{codigo}", async (string codigo, AppDbContext db) =
         .Include(p => p.Salvaguardas)
         .Include(p => p.PersonagensIdiomas)
             .ThenInclude(pi => pi.Idioma)
+        .Include(p => p.PersonagensMagias)
+            .ThenInclude(pm => pm.Magia)
         .FirstOrDefaultAsync(p => p.Codigo.ToLower() == codigo.ToLower());
 
     if (personagem == null)
@@ -154,7 +161,7 @@ app.MapGet("/api/personagens/{codigo}", async (string codigo, AppDbContext db) =
             t.Descricao
         }).ToList(),
         Classe = personagem.ClassesPersonagens.OrderBy(cp => cp.IdClasse).Select(cp => cp.Classe.Nome).FirstOrDefault() ?? "Sem Classe",
-        Subclasse = personagem.ClassesPersonagens.OrderBy(cp => cp.IdClasse).Select(cp => cp.Classe.Subclasse).FirstOrDefault(),
+        Subclasse = personagem.ClassesPersonagens.OrderBy(cp => cp.IdClasse).Select(cp => cp.Subclasse != null ? cp.Subclasse.Nome : null).FirstOrDefault(),
         Nivel = personagem.ClassesPersonagens.Sum(cp => cp.Nivel),
         personagem.Alinhamento,
         personagem.Forca,
@@ -168,10 +175,23 @@ app.MapGet("/api/personagens/{codigo}", async (string codigo, AppDbContext db) =
         Classes = personagem.ClassesPersonagens.Select(cp => new
         {
             cp.Classe.Nome,
-            cp.Classe.Subclasse,
+            Subclasse = cp.Subclasse != null ? cp.Subclasse.Nome : null,
             cp.Classe.DadoVida,
             cp.Classe.Deslocamento,
-            cp.Nivel
+            cp.Nivel,
+            Progresso = cp.Classe.Progressoes
+                .Where(prog => prog.Nivel == cp.Nivel)
+                .Select(prog => new
+                {
+                    prog.Nivel,
+                    prog.BonusProficiencia,
+                    prog.TruquesConhecidos,
+                    prog.MagiasConhecidas,
+                    prog.EspacosMagia,
+                    prog.NivelMagia,
+                    prog.InvocacoesConhecidas
+                })
+                .FirstOrDefault()
         }),
         Historias = personagem.Historias.Select(h => new
         {
@@ -226,7 +246,9 @@ app.MapGet("/api/personagens/{codigo}", async (string codigo, AppDbContext db) =
             a.BonusAcerto,
             a.Dano,
             a.TipoDano,
-            a.Descricao
+            a.Descricao,
+            a.AcertoTooltip,
+            a.DanoTooltip
         }).ToList(),
         Proficiencias = personagem.Proficiencias.Select(p => new
         {
@@ -235,7 +257,14 @@ app.MapGet("/api/personagens/{codigo}", async (string codigo, AppDbContext db) =
             p.Nome,
             p.Origem
         }).ToList(),
-        Idiomas = personagem.PersonagensIdiomas.Select(pi => pi.Idioma.Nome).ToList()
+        Idiomas = personagem.PersonagensIdiomas.Select(pi => pi.Idioma.Nome).ToList(),
+        Magias = personagem.PersonagensMagias.Select(pm => new
+        {
+            pm.Magia.Id,
+            pm.Magia.Nome,
+            pm.Magia.Nivel,
+            pm.Magia.Descricao
+        }).ToList()
     });
 })
 .WithName("GetPersonagemByCodigo");
@@ -265,7 +294,6 @@ app.MapPost("/api/personagens", async (PersonagemDto dto, AppDbContext db) =>
     var racaDb = await db.Racas.FirstOrDefaultAsync(r => r.Nome.ToLower() == dto.Raca.ToLower());
     if (racaDb == null)
     {
-        // Se não existir, podemos criar uma raça padrão para não quebrar cadastros antigos
         racaDb = new Raca
         {
             Nome = dto.Raca,
@@ -299,13 +327,13 @@ app.MapPost("/api/personagens", async (PersonagemDto dto, AppDbContext db) =>
     await db.SaveChangesAsync();
 
     // Mapeamento relacional da Classe fornecida no DTO
-    var classeDb = await db.Classes.FirstOrDefaultAsync(c => c.Nome.ToLower() == dto.Classe.ToLower() && (c.Subclasse == null || c.Subclasse.ToLower() == dto.Subclasse.ToLower()));
+    var classeDb = await db.Classes.FirstOrDefaultAsync(c => c.Nome.ToLower() == dto.Classe.ToLower() && c.IdClassePai == null);
     if (classeDb == null)
     {
         classeDb = new Classe
         {
             Nome = dto.Classe,
-            Subclasse = dto.Subclasse,
+            IdClassePai = null,
             DadoVida = "d8",
             Deslocamento = null
         };
@@ -313,10 +341,25 @@ app.MapPost("/api/personagens", async (PersonagemDto dto, AppDbContext db) =>
         await db.SaveChangesAsync();
     }
 
+    var subclasseDb = await db.Classes.FirstOrDefaultAsync(c => c.Nome.ToLower() == dto.Subclasse.ToLower() && c.IdClassePai == classeDb.Id);
+    if (subclasseDb == null)
+    {
+        subclasseDb = new Classe
+        {
+            Nome = dto.Subclasse,
+            IdClassePai = classeDb.Id,
+            DadoVida = "",
+            Deslocamento = null
+        };
+        db.Classes.Add(subclasseDb);
+        await db.SaveChangesAsync();
+    }
+
     var cp = new ClassePersonagem
     {
         IdPersonagem = personagem.Id,
         IdClasse = classeDb.Id,
+        IdSubclasse = subclasseDb.Id,
         Nivel = dto.Nivel > 0 ? dto.Nivel : 1
     };
     db.ClassesPersonagens.Add(cp);
@@ -330,7 +373,7 @@ app.MapPost("/api/personagens", async (PersonagemDto dto, AppDbContext db) =>
         personagem.Base64Imagem,
         Raca = racaDb.Nome,
         Classe = classeDb.Nome,
-        Subclasse = classeDb.Subclasse,
+        Subclasse = subclasseDb.Nome,
         Nivel = cp.Nivel,
         personagem.Alinhamento,
         personagem.VidaMaxima,

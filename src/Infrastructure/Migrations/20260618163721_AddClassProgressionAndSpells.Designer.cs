@@ -2,6 +2,7 @@
 using Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -10,9 +11,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Infrastructure.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260618163721_AddClassProgressionAndSpells")]
+    partial class AddClassProgressionAndSpells
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -29,10 +32,6 @@ namespace Infrastructure.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
-                    b.Property<string>("AcertoTooltip")
-                        .HasMaxLength(150)
-                        .HasColumnType("character varying(150)");
-
                     b.Property<string>("Alcance")
                         .IsRequired()
                         .HasMaxLength(50)
@@ -47,10 +46,6 @@ namespace Infrastructure.Migrations
                         .IsRequired()
                         .HasMaxLength(50)
                         .HasColumnType("character varying(50)");
-
-                    b.Property<string>("DanoTooltip")
-                        .HasMaxLength(150)
-                        .HasColumnType("character varying(150)");
 
                     b.Property<string>("Descricao")
                         .HasMaxLength(500)
@@ -84,11 +79,9 @@ namespace Infrastructure.Migrations
                         new
                         {
                             Id = 1,
-                            AcertoTooltip = "[FOR](FOR) + [PROF](Proficiência)",
                             Alcance = "1.5m / 5ft",
                             BonusAcerto = "+1",
                             Dano = "1",
-                            DanoTooltip = "1 (Base) + [FOR](FOR)",
                             Descricao = "Ataque desarmado básico.",
                             IdPersonagem = 1,
                             Nome = "Soco",

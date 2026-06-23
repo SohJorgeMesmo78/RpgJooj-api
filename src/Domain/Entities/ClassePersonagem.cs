@@ -8,5 +8,8 @@ public class ClassePersonagem
     public int IdClasse { get; set; }
     public Classe Classe { get; set; } = null!;
 
+    public int? IdSubclasse { get; set; }
+    public Classe? Subclasse { get; set; }
+
     public int Nivel { get; set; }
 }

@@ -1,7 +1,7 @@
 {
   "format": 1,
   "restore": {
-    "D:\\HD\\Projetos\\RpgJooj\\RpgJooj-api\\src\\WebApi\\WebApi.csproj": {}
+    "D:\\HD\\Projetos\\RpgJooj\\RpgJooj-api\\src\\WebAPI\\WebApi.csproj": {}
   },
   "projects": {
     "D:\\HD\\Projetos\\RpgJooj\\RpgJooj-api\\src\\Application\\Application.csproj": {
@@ -1020,14 +1020,14 @@
         }
       }
     },
-    "D:\\HD\\Projetos\\RpgJooj\\RpgJooj-api\\src\\WebApi\\WebApi.csproj": {
+    "D:\\HD\\Projetos\\RpgJooj\\RpgJooj-api\\src\\WebAPI\\WebApi.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "D:\\HD\\Projetos\\RpgJooj\\RpgJooj-api\\src\\WebApi\\WebApi.csproj",
+        "projectUniqueName": "D:\\HD\\Projetos\\RpgJooj\\RpgJooj-api\\src\\WebAPI\\WebApi.csproj",
         "projectName": "WebApi",
-        "projectPath": "D:\\HD\\Projetos\\RpgJooj\\RpgJooj-api\\src\\WebApi\\WebApi.csproj",
+        "projectPath": "D:\\HD\\Projetos\\RpgJooj\\RpgJooj-api\\src\\WebAPI\\WebApi.csproj",
         "packagesPath": "C:\\Users\\Jorge\\.nuget\\packages\\",
-        "outputPath": "D:\\HD\\Projetos\\RpgJooj\\RpgJooj-api\\src\\WebApi\\obj\\",
+        "outputPath": "D:\\HD\\Projetos\\RpgJooj\\RpgJooj-api\\src\\WebAPI\\obj\\",
         "projectStyle": "PackageReference",
         "configFilePaths": [
           "C:\\Users\\Jorge\\AppData\\Roaming\\NuGet\\NuGet.Config"

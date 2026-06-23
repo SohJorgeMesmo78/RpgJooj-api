@@ -12,4 +12,6 @@ public class AcaoPersonagem
     public required string Dano { get; set; }
     public required string TipoDano { get; set; }
     public string? Descricao { get; set; }
+    public string? AcertoTooltip { get; set; }
+    public string? DanoTooltip { get; set; }
 }

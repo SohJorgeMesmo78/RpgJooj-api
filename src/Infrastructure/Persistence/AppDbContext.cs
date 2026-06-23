@@ -20,6 +20,9 @@ public class AppDbContext : DbContext
     public DbSet<ClassePericiaDisponivel> ClassesPericiasDisponiveis => Set<ClassePericiaDisponivel>();
     public DbSet<Idioma> Idiomas => Set<Idioma>();
     public DbSet<PersonagemIdioma> PersonagensIdiomas => Set<PersonagemIdioma>();
+    public DbSet<ClasseProgressao> ClasseProgressoes => Set<ClasseProgressao>();
+    public DbSet<Magia> Magias => Set<Magia>();
+    public DbSet<PersonagemMagia> PersonagensMagias => Set<PersonagemMagia>();
 
     public AppDbContext(DbContextOptions<AppDbContext> options) : base(options)
     {
@@ -76,9 +79,14 @@ public class AppDbContext : DbContext
             entity.ToTable("Classes");
             entity.HasKey(c => c.Id);
             entity.Property(c => c.Nome).IsRequired().HasMaxLength(100);
-            entity.Property(c => c.Subclasse).HasMaxLength(100);
             entity.Property(c => c.DadoVida).IsRequired().HasMaxLength(10);
             entity.Property(c => c.Deslocamento).IsRequired(false);
+            entity.Property(c => c.IdClassePai).IsRequired(false);
+
+            entity.HasOne(c => c.ClassePai)
+                .WithMany(c => c.Subclasses)
+                .HasForeignKey(c => c.IdClassePai)
+                .OnDelete(DeleteBehavior.Restrict);
         });
 
         // Configure ClassePersonagem entity
@@ -96,6 +104,12 @@ public class AppDbContext : DbContext
                 .WithMany(c => c.ClassesPersonagens)
                 .HasForeignKey(cp => cp.IdClasse)
                 .OnDelete(DeleteBehavior.Cascade);
+
+            entity.Property(cp => cp.IdSubclasse).IsRequired(false);
+            entity.HasOne(cp => cp.Subclasse)
+                .WithMany()
+                .HasForeignKey(cp => cp.IdSubclasse)
+                .OnDelete(DeleteBehavior.Restrict);
 
             entity.Property(cp => cp.Nivel).IsRequired();
         });
@@ -182,6 +196,8 @@ public class AppDbContext : DbContext
             entity.Property(ap => ap.Dano).IsRequired().HasMaxLength(50);
             entity.Property(ap => ap.TipoDano).IsRequired().HasMaxLength(50);
             entity.Property(ap => ap.Descricao).HasMaxLength(500);
+            entity.Property(ap => ap.AcertoTooltip).HasMaxLength(150);
+            entity.Property(ap => ap.DanoTooltip).HasMaxLength(150);
 
             entity.HasOne(ap => ap.Personagem)
                 .WithMany(p => p.Acoes)
@@ -259,10 +275,49 @@ public class AppDbContext : DbContext
                 .OnDelete(DeleteBehavior.Cascade);
         });
 
+        // Configure ClasseProgressao entity
+        modelBuilder.Entity<ClasseProgressao>(entity =>
+        {
+            entity.ToTable("ClasseProgressoes");
+            entity.HasKey(cp => cp.Id);
+            entity.HasOne(cp => cp.Classe)
+                .WithMany(c => c.Progressoes)
+                .HasForeignKey(cp => cp.IdClasse)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        // Configure Magia entity
+        modelBuilder.Entity<Magia>(entity =>
+        {
+            entity.ToTable("Magias");
+            entity.HasKey(m => m.Id);
+            entity.Property(m => m.Nome).IsRequired().HasMaxLength(100);
+            entity.Property(m => m.Descricao).IsRequired();
+        });
+
+        // Configure PersonagemMagia entity
+        modelBuilder.Entity<PersonagemMagia>(entity =>
+        {
+            entity.ToTable("PersonagensMagias");
+            entity.HasKey(pm => new { pm.IdPersonagem, pm.IdMagia });
+
+            entity.HasOne(pm => pm.Personagem)
+                .WithMany(p => p.PersonagensMagias)
+                .HasForeignKey(pm => pm.IdPersonagem)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(pm => pm.Magia)
+                .WithMany(m => m.PersonagensMagias)
+                .HasForeignKey(pm => pm.IdMagia)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
         // Seeding Classes
         modelBuilder.Entity<Classe>().HasData(
-            new Classe { Id = 1, Nome = "Bruxo", Subclasse = "o Gênio", DadoVida = "d8", Deslocamento = null, QtdPericiasEscolha = 2 },
-            new Classe { Id = 2, Nome = "Monge", Subclasse = "Caminho do eu astral", DadoVida = "d8", Deslocamento = null, QtdPericiasEscolha = 2 }
+            new Classe { Id = 1, Nome = "Bruxo", IdClassePai = null, DadoVida = "d8", Deslocamento = null, QtdPericiasEscolha = 2 },
+            new Classe { Id = 2, Nome = "Monge", IdClassePai = null, DadoVida = "d8", Deslocamento = null, QtdPericiasEscolha = 2 },
+            new Classe { Id = 3, Nome = "o Gênio", IdClassePai = 1, DadoVida = "", Deslocamento = null, QtdPericiasEscolha = 0 },
+            new Classe { Id = 4, Nome = "Caminho do eu astral", IdClassePai = 2, DadoVida = "", Deslocamento = null, QtdPericiasEscolha = 0 }
         );
 
         // Seeding Racas
@@ -340,7 +395,39 @@ public class AppDbContext : DbContext
 
         // Seeding ClassesPersonagens
         modelBuilder.Entity<ClassePersonagem>().HasData(
-            new ClassePersonagem { IdPersonagem = 1, IdClasse = 1, Nivel = 1 }
+            new ClassePersonagem { IdPersonagem = 1, IdClasse = 1, IdSubclasse = 3, Nivel = 1 }
+        );
+
+        // Seeding ClasseProgressoes
+        modelBuilder.Entity<ClasseProgressao>().HasData(
+            new ClasseProgressao
+            {
+                Id = 1,
+                IdClasse = 1,
+                Nivel = 1,
+                BonusProficiencia = 2,
+                TruquesConhecidos = 2,
+                MagiasConhecidas = 2,
+                EspacosMagia = 1,
+                NivelMagia = 1,
+                InvocacoesConhecidas = 0
+            }
+        );
+
+        // Seeding Magias
+        modelBuilder.Entity<Magia>().HasData(
+            new Magia
+            {
+                Id = 1,
+                Nome = "Raio místico",
+                Nivel = 0,
+                Descricao = "Um feixe de energia estalante vai em direção a uma criatura. Faça um ataque à distância com magia. Com um acerto, o alvo sofre 1d10 de dano de energia. **Explosão Agonizante:** Você adiciona seu Modificador de Carisma (+4) ao dano. Dano total por acerto: 1d10+4 de Energia."
+            }
+        );
+
+        // Seeding PersonagensMagias
+        modelBuilder.Entity<PersonagemMagia>().HasData(
+            new PersonagemMagia { IdPersonagem = 1, IdMagia = 1 }
         );
 
         // Seeding Pericias
@@ -533,7 +620,9 @@ Agora, aos 20 anos, armado com seu sorriso extravagante, seu fiel familiar Shift
                 BonusAcerto = "+1",
                 Dano = "1",
                 TipoDano = "Impacto",
-                Descricao = "Ataque desarmado básico."
+                Descricao = "Ataque desarmado básico.",
+                AcertoTooltip = "[FOR](FOR) + [PROF](Proficiência)",
+                DanoTooltip = "1 (Base) + [FOR](FOR)"
             }
         );
 
