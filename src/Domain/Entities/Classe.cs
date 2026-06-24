@@ -17,4 +17,5 @@ public class Classe
     public ICollection<ClasseProgressao> Progressoes { get; set; } = new List<ClasseProgressao>();
     public ICollection<ClassePersonagem> ClassesPersonagens { get; set; } = new List<ClassePersonagem>();
     public ICollection<ClassePericiaDisponivel> PericiasDisponiveis { get; set; } = new List<ClassePericiaDisponivel>();
+    public ICollection<CaracteristicaClasse> Caracteristicas { get; set; } = new List<CaracteristicaClasse>();
 }

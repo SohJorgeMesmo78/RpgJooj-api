@@ -23,6 +23,7 @@ public class AppDbContext : DbContext
     public DbSet<ClasseProgressao> ClasseProgressoes => Set<ClasseProgressao>();
     public DbSet<Magia> Magias => Set<Magia>();
     public DbSet<PersonagemMagia> PersonagensMagias => Set<PersonagemMagia>();
+    public DbSet<CaracteristicaClasse> CaracteristicasClasses => Set<CaracteristicaClasse>();
 
     public AppDbContext(DbContextOptions<AppDbContext> options) : base(options)
     {
@@ -312,6 +313,20 @@ public class AppDbContext : DbContext
                 .OnDelete(DeleteBehavior.Cascade);
         });
 
+        // Configure CaracteristicaClasse entity
+        modelBuilder.Entity<CaracteristicaClasse>(entity =>
+        {
+            entity.ToTable("CaracteristicasClasses");
+            entity.HasKey(cc => cc.Id);
+            entity.Property(cc => cc.Nome).IsRequired().HasMaxLength(150);
+            entity.Property(cc => cc.Descricao).IsRequired();
+
+            entity.HasOne(cc => cc.Classe)
+                .WithMany(c => c.Caracteristicas)
+                .HasForeignKey(cc => cc.IdClasse)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
         // Seeding Classes
         modelBuilder.Entity<Classe>().HasData(
             new Classe { Id = 1, Nome = "Bruxo", IdClassePai = null, DadoVida = "d8", Deslocamento = null, QtdPericiasEscolha = 2 },
@@ -400,18 +415,47 @@ public class AppDbContext : DbContext
 
         // Seeding ClasseProgressoes
         modelBuilder.Entity<ClasseProgressao>().HasData(
-            new ClasseProgressao
-            {
-                Id = 1,
-                IdClasse = 1,
-                Nivel = 1,
-                BonusProficiencia = 2,
-                TruquesConhecidos = 2,
-                MagiasConhecidas = 2,
-                EspacosMagia = 1,
-                NivelMagia = 1,
-                InvocacoesConhecidas = 0
-            }
+            new ClasseProgressao { Id = 1, IdClasse = 1, Nivel = 1, BonusProficiencia = 2, TruquesConhecidos = 2, MagiasConhecidas = 2, EspacosMagia = 1, NivelMagia = 1, InvocacoesConhecidas = 0 },
+            new ClasseProgressao { Id = 2, IdClasse = 1, Nivel = 2, BonusProficiencia = 2, TruquesConhecidos = 2, MagiasConhecidas = 3, EspacosMagia = 2, NivelMagia = 1, InvocacoesConhecidas = 2 },
+            new ClasseProgressao { Id = 3, IdClasse = 1, Nivel = 3, BonusProficiencia = 2, TruquesConhecidos = 2, MagiasConhecidas = 4, EspacosMagia = 2, NivelMagia = 2, InvocacoesConhecidas = 2 },
+            new ClasseProgressao { Id = 4, IdClasse = 1, Nivel = 4, BonusProficiencia = 2, TruquesConhecidos = 3, MagiasConhecidas = 5, EspacosMagia = 2, NivelMagia = 2, InvocacoesConhecidas = 3 },
+            new ClasseProgressao { Id = 5, IdClasse = 1, Nivel = 5, BonusProficiencia = 3, TruquesConhecidos = 3, MagiasConhecidas = 6, EspacosMagia = 2, NivelMagia = 3, InvocacoesConhecidas = 3 },
+            new ClasseProgressao { Id = 6, IdClasse = 1, Nivel = 6, BonusProficiencia = 3, TruquesConhecidos = 3, MagiasConhecidas = 7, EspacosMagia = 2, NivelMagia = 3, InvocacoesConhecidas = 4 },
+            new ClasseProgressao { Id = 7, IdClasse = 1, Nivel = 7, BonusProficiencia = 3, TruquesConhecidos = 3, MagiasConhecidas = 8, EspacosMagia = 2, NivelMagia = 4, InvocacoesConhecidas = 4 },
+            new ClasseProgressao { Id = 8, IdClasse = 1, Nivel = 8, BonusProficiencia = 3, TruquesConhecidos = 3, MagiasConhecidas = 9, EspacosMagia = 2, NivelMagia = 4, InvocacoesConhecidas = 4 },
+            new ClasseProgressao { Id = 9, IdClasse = 1, Nivel = 9, BonusProficiencia = 4, TruquesConhecidos = 3, MagiasConhecidas = 10, EspacosMagia = 2, NivelMagia = 5, InvocacoesConhecidas = 5 },
+            new ClasseProgressao { Id = 10, IdClasse = 1, Nivel = 10, BonusProficiencia = 4, TruquesConhecidos = 4, MagiasConhecidas = 10, EspacosMagia = 2, NivelMagia = 5, InvocacoesConhecidas = 5 },
+            new ClasseProgressao { Id = 11, IdClasse = 1, Nivel = 11, BonusProficiencia = 4, TruquesConhecidos = 4, MagiasConhecidas = 11, EspacosMagia = 3, NivelMagia = 5, InvocacoesConhecidas = 5 },
+            new ClasseProgressao { Id = 12, IdClasse = 1, Nivel = 12, BonusProficiencia = 4, TruquesConhecidos = 4, MagiasConhecidas = 11, EspacosMagia = 3, NivelMagia = 5, InvocacoesConhecidas = 6 },
+            new ClasseProgressao { Id = 13, IdClasse = 1, Nivel = 13, BonusProficiencia = 5, TruquesConhecidos = 4, MagiasConhecidas = 12, EspacosMagia = 3, NivelMagia = 5, InvocacoesConhecidas = 6 },
+            new ClasseProgressao { Id = 14, IdClasse = 1, Nivel = 14, BonusProficiencia = 5, TruquesConhecidos = 4, MagiasConhecidas = 12, EspacosMagia = 3, NivelMagia = 5, InvocacoesConhecidas = 6 },
+            new ClasseProgressao { Id = 15, IdClasse = 1, Nivel = 15, BonusProficiencia = 5, TruquesConhecidos = 4, MagiasConhecidas = 13, EspacosMagia = 3, NivelMagia = 5, InvocacoesConhecidas = 7 },
+            new ClasseProgressao { Id = 16, IdClasse = 1, Nivel = 16, BonusProficiencia = 5, TruquesConhecidos = 4, MagiasConhecidas = 13, EspacosMagia = 3, NivelMagia = 5, InvocacoesConhecidas = 7 },
+            new ClasseProgressao { Id = 17, IdClasse = 1, Nivel = 17, BonusProficiencia = 6, TruquesConhecidos = 4, MagiasConhecidas = 14, EspacosMagia = 4, NivelMagia = 5, InvocacoesConhecidas = 7 },
+            new ClasseProgressao { Id = 18, IdClasse = 1, Nivel = 18, BonusProficiencia = 6, TruquesConhecidos = 4, MagiasConhecidas = 14, EspacosMagia = 4, NivelMagia = 5, InvocacoesConhecidas = 8 },
+            new ClasseProgressao { Id = 19, IdClasse = 1, Nivel = 19, BonusProficiencia = 6, TruquesConhecidos = 4, MagiasConhecidas = 15, EspacosMagia = 4, NivelMagia = 5, InvocacoesConhecidas = 8 },
+            new ClasseProgressao { Id = 20, IdClasse = 1, Nivel = 20, BonusProficiencia = 6, TruquesConhecidos = 4, MagiasConhecidas = 15, EspacosMagia = 4, NivelMagia = 5, InvocacoesConhecidas = 8 }
+        );
+
+        // Seeding CaracteristicasClasses
+        modelBuilder.Entity<CaracteristicaClasse>().HasData(
+            new CaracteristicaClasse { Id = 1, IdClasse = 1, Nivel = 1, Nome = "Patrono Transcendental", Descricao = "Seu patrono concede a você características no 1º nível e novamente no 6º, 10º e 14º nível." },
+            new CaracteristicaClasse { Id = 2, IdClasse = 1, Nivel = 1, Nome = "Magia de Pacto", Descricao = "Sua pesquisa arcana e a magia infundida em você por seu patrono concedem a você a capacidade de conjurar magias." },
+            new CaracteristicaClasse { Id = 3, IdClasse = 1, Nivel = 2, Nome = "Invocações Místicas", Descricao = "Em suas investigações sobre o conhecimento oculto, você descobriu invocações místicas, fragmentos de conhecimento proibido que infundem você com uma habilidade mágica duradoura." },
+            new CaracteristicaClasse { Id = 4, IdClasse = 1, Nivel = 3, Nome = "Dádiva do Pacto", Descricao = "No 3º nível, seu patrono transcendental concede a você um favor por seus serviços leais. Você ganha uma das características: Pacto da Corrente, Pacto da Lâmina ou Pacto do Tomo." },
+            new CaracteristicaClasse { Id = 5, IdClasse = 1, Nivel = 4, Nome = "Incremento no Valor de Habilidade", Descricao = "Você pode aumentar um valor de atributo de sua escolha em 2, ou dois valores de atributo de sua escolha em 1. Como normal, você não pode aumentar um valor de atributo acima de 20 usando essa característica." },
+            new CaracteristicaClasse { Id = 6, IdClasse = 1, Nivel = 6, Nome = "Característica de Patrono Transcendental", Descricao = "Seu Patrono Transcendental concede a você uma característica no 6º nível baseado na sua escolha de Patrono." },
+            new CaracteristicaClasse { Id = 7, IdClasse = 1, Nivel = 8, Nome = "Incremento no Valor de Habilidade", Descricao = "Você pode aumentar um valor de atributo de sua escolha em 2, ou dois valores de atributo de sua escolha em 1. Como normal, você não pode aumentar um valor de atributo acima de 20 usando essa característica." },
+            new CaracteristicaClasse { Id = 8, IdClasse = 1, Nivel = 10, Nome = "Característica de Patrono Transcendental", Descricao = "Seu Patrono Transcendental concede a você uma característica no 10º nível baseado na sua escolha de Patrono." },
+            new CaracteristicaClasse { Id = 9, IdClasse = 1, Nivel = 11, Nome = "Arcana Mística (6° nível)", Descricao = "Seu patrono confere a você um segredo mágico chamado de Arcana Mística. Escolha uma magia de 6º nível da lista de magias de bruxo como sua arcana mística. Você pode conjurar essa magia uma vez sem gastar um espaço de magia. Você deve terminar um descanso longo antes de poder fazer isso novamente." },
+            new CaracteristicaClasse { Id = 10, IdClasse = 1, Nivel = 12, Nome = "Incremento no Valor de Habilidade", Descricao = "Você pode aumentar um valor de atributo de sua escolha em 2, ou dois valores de atributo de sua escolha em 1. Como normal, você não pode aumentar um valor de atributo acima de 20 usando essa característica." },
+            new CaracteristicaClasse { Id = 11, IdClasse = 1, Nivel = 13, Nome = "Arcana Mística (7° nível)", Descricao = "Seu patrono confere a você um segredo mágico chamado de Arcana Mística. Escolha uma magia de 7º nível da lista de magias de bruxo como sua arcana mística. Você pode conjurar essa magia uma vez sem gastar um espaço de magia. Você deve terminar um descanso longo antes de poder fazer isso novamente." },
+            new CaracteristicaClasse { Id = 12, IdClasse = 1, Nivel = 14, Nome = "Característica de Patrono Transcendental", Descricao = "Seu Patrono Transcendental concede a você uma característica no 14º nível baseado na sua escolha de Patrono." },
+            new CaracteristicaClasse { Id = 13, IdClasse = 1, Nivel = 15, Nome = "Arcana Mística (8° nível)", Descricao = "Seu patrono confere a você um segredo mágico chamado de Arcana Mística. Escolha uma magia de 8º nível da lista de magias de bruxo como sua arcana mística. Você pode conjurar essa magia uma vez sem gastar um espaço de magia. Você deve terminar um descanso longo antes de poder fazer isso novamente." },
+            new CaracteristicaClasse { Id = 14, IdClasse = 1, Nivel = 16, Nome = "Incremento no Valor de Habilidade", Descricao = "Você pode aumentar um valor de atributo de sua escolha em 2, ou dois valores de atributo de sua escolha em 1. Como normal, você não pode aumentar um valor de atributo acima de 20 usando essa característica." },
+            new CaracteristicaClasse { Id = 15, IdClasse = 1, Nivel = 17, Nome = "Arcana Mística (9° nível)", Descricao = "Seu patrono confere a você um segredo mágico chamado de Arcana Mística. Escolha uma magia de 9º nível da lista de magias de bruxo como sua arcana mística. Você pode conjurar essa magia uma vez sem gastar um espaço de magia. Você deve terminar um descanso longo antes de poder fazer isso novamente." },
+            new CaracteristicaClasse { Id = 16, IdClasse = 1, Nivel = 19, Nome = "Incremento no Valor de Habilidade", Descricao = "Você pode aumentar um valor de atributo de sua escolha em 2, ou dois valores de atributo de sua escolha em 1. Como normal, você não pode aumentar um valor de atributo acima de 20 usando essa característica." },
+            new CaracteristicaClasse { Id = 17, IdClasse = 1, Nivel = 20, Nome = "Mestre Místico", Descricao = "No 20º nível, você pode extrair de sua reserva interna de poder místico enquanto roga ao seu patrono para recuperar espaços de magia gastos. Você pode gastar 1 minuto implorando pela ajuda do seu patrono para recuperar todos os seus espaços de magia gastos da sua característica Magia de Pacto. Você deve terminar um descanso longo antes de usar esta característica novamente." }
         );
 
         // Seeding Magias

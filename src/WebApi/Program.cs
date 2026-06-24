@@ -82,6 +82,9 @@ app.MapGet("/api/personagens/{codigo}", async (string codigo, AppDbContext db) =
             .ThenInclude(cp => cp.Classe)
                 .ThenInclude(c => c.Progressoes)
         .Include(p => p.ClassesPersonagens)
+            .ThenInclude(cp => cp.Classe)
+                .ThenInclude(c => c.Caracteristicas)
+        .Include(p => p.ClassesPersonagens)
             .ThenInclude(cp => cp.Subclasse)
         .Include(p => p.PersonagensPericias)
         .Include(p => p.Raca)
@@ -191,7 +194,16 @@ app.MapGet("/api/personagens/{codigo}", async (string codigo, AppDbContext db) =
                     prog.NivelMagia,
                     prog.InvocacoesConhecidas
                 })
-                .FirstOrDefault()
+                .FirstOrDefault(),
+            Caracteristicas = cp.Classe.Caracteristicas
+                .Where(car => car.Nivel <= cp.Nivel)
+                .Select(car => new
+                {
+                    car.Id,
+                    car.Nivel,
+                    car.Nome,
+                    car.Descricao
+                }).ToList()
         }),
         Historias = personagem.Historias.Select(h => new
         {
