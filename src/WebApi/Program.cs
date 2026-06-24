@@ -54,6 +54,7 @@ using (var scope = app.Services.CreateScope())
 app.MapGet("/api/personagens", async (AppDbContext db) =>
 {
     var personagens = await db.Personagens
+        .AsNoTracking()
         .Include(p => p.ClassesPersonagens)
             .ThenInclude(cp => cp.Classe)
         .Include(p => p.ClassesPersonagens)
@@ -76,7 +77,10 @@ app.MapGet("/api/personagens", async (AppDbContext db) =>
 
 app.MapGet("/api/personagens/{codigo}", async (string codigo, AppDbContext db) =>
 {
+    var codeLower = codigo.ToLower();
     var personagem = await db.Personagens
+        .AsNoTracking()
+        .AsSplitQuery()
         .Include(p => p.Historias.OrderBy(h => h.Capitulo))
         .Include(p => p.ClassesPersonagens)
             .ThenInclude(cp => cp.Classe)
@@ -97,14 +101,14 @@ app.MapGet("/api/personagens/{codigo}", async (string codigo, AppDbContext db) =
             .ThenInclude(pi => pi.Idioma)
         .Include(p => p.PersonagensMagias)
             .ThenInclude(pm => pm.Magia)
-        .FirstOrDefaultAsync(p => p.Codigo.ToLower() == codigo.ToLower());
+        .FirstOrDefaultAsync(p => p.Codigo == codeLower);
 
     if (personagem == null)
     {
         return Results.NotFound(new { Message = $"Personagem com código '{codigo}' não encontrado." });
     }
 
-    var todasPericias = await db.Pericias.OrderBy(p => p.Nome).ToListAsync();
+    var todasPericias = await db.Pericias.AsNoTracking().OrderBy(p => p.Nome).ToListAsync();
 
     var nivelTotal = personagem.ClassesPersonagens.Sum(cp => cp.Nivel);
     var bonusProficiencia = 2 + (nivelTotal - 1) / 4;
@@ -280,6 +284,364 @@ app.MapGet("/api/personagens/{codigo}", async (string codigo, AppDbContext db) =
     });
 })
 .WithName("GetPersonagemByCodigo");
+
+app.MapGet("/api/personagens/detalhes", async (string codigo, AppDbContext db) =>
+{
+    var codeLower = codigo.ToLower();
+    var p = await db.Personagens
+        .AsNoTracking()
+        .Include(x => x.ClassesPersonagens)
+            .ThenInclude(cp => cp.Classe)
+        .Include(x => x.ClassesPersonagens)
+            .ThenInclude(cp => cp.Subclasse)
+        .Include(x => x.Raca)
+        .FirstOrDefaultAsync(x => x.Codigo == codeLower);
+
+    if (p == null)
+    {
+        return Results.NotFound(new { Message = $"Personagem com código '{codigo}' não encontrado." });
+    }
+
+    var classStr = p.ClassesPersonagens.OrderBy(cp => cp.IdClasse).Select(cp => cp.Subclasse != null ? $"{cp.Classe.Nome} / {cp.Subclasse.Nome}" : cp.Classe.Nome).FirstOrDefault() ?? "Sem Classe";
+
+    return Results.Ok(new
+    {
+        p.Id,
+        p.Nome,
+        p.Codigo,
+        p.Base64Imagem,
+        Raca = p.Raca.Nome,
+        ClassAndSubclass = classStr,
+        Nivel = p.ClassesPersonagens.Sum(cp => cp.Nivel),
+        p.Alinhamento,
+        p.Forca,
+        p.Destreza,
+        p.Constituicao,
+        p.Inteligencia,
+        p.Sabedoria,
+        p.Carisma,
+        p.VidaMaxima,
+        p.VidaAtual
+    });
+})
+.WithName("GetPersonagemDetalhes");
+
+app.MapGet("/api/personagens/historia", async (string codigo, AppDbContext db) =>
+{
+    var codeLower = codigo.ToLower();
+    var p = await db.Personagens
+        .AsNoTracking()
+        .Include(x => x.Historias.OrderBy(h => h.Capitulo))
+        .FirstOrDefaultAsync(x => x.Codigo == codeLower);
+
+    if (p == null)
+    {
+        return Results.NotFound(new { Message = $"Personagem com código '{codigo}' não encontrado." });
+    }
+
+    return Results.Ok(new
+    {
+        p.Id,
+        p.Nome,
+        p.Codigo,
+        Historias = p.Historias.Select(h => new
+        {
+            h.Id,
+            h.Capitulo,
+            h.TituloCapitulo,
+            h.Texto
+        })
+    });
+})
+.WithName("GetPersonagemHistoria");
+
+app.MapGet("/api/personagens/raca", async (string codigo, AppDbContext db) =>
+{
+    var codeLower = codigo.ToLower();
+    var p = await db.Personagens
+        .AsNoTracking()
+        .Include(x => x.Raca)
+            .ThenInclude(r => r.TracosRaciais)
+        .FirstOrDefaultAsync(x => x.Codigo == codeLower);
+
+    if (p == null)
+    {
+        return Results.NotFound(new { Message = $"Personagem com código '{codigo}' não encontrado." });
+    }
+
+    return Results.Ok(new
+    {
+        p.Id,
+        p.Nome,
+        p.Codigo,
+        Raca = p.Raca.Nome,
+        RacaInfo = new
+        {
+            p.Raca.Nome,
+            p.Raca.Descricao,
+            p.Raca.TipoCriatura,
+            p.Raca.Tamanho,
+            p.Raca.Deslocamento
+        },
+        TracosRaciais = p.Raca.TracosRaciais.Select(t => new
+        {
+            t.Id,
+            t.Nome,
+            t.Descricao
+        }).ToList()
+    });
+})
+.WithName("GetPersonagemRaca");
+
+app.MapGet("/api/personagens/classe", async (string codigo, AppDbContext db) =>
+{
+    var codeLower = codigo.ToLower();
+    var p = await db.Personagens
+        .AsNoTracking()
+        .Include(x => x.ClassesPersonagens)
+            .ThenInclude(cp => cp.Classe)
+                .ThenInclude(c => c.Progressoes)
+        .Include(x => x.ClassesPersonagens)
+            .ThenInclude(cp => cp.Classe)
+                .ThenInclude(c => c.Caracteristicas)
+        .Include(x => x.ClassesPersonagens)
+            .ThenInclude(cp => cp.Subclasse)
+        .FirstOrDefaultAsync(x => x.Codigo == codeLower);
+
+    if (p == null)
+    {
+        return Results.NotFound(new { Message = $"Personagem com código '{codigo}' não encontrado." });
+    }
+
+    return Results.Ok(new
+    {
+        p.Id,
+        p.Nome,
+        p.Codigo,
+        Classes = p.ClassesPersonagens.Select(cp => new
+        {
+            cp.Classe.Nome,
+            Subclasse = cp.Subclasse != null ? cp.Subclasse.Nome : null,
+            cp.Classe.DadoVida,
+            cp.Classe.Deslocamento,
+            cp.Nivel,
+            Progresso = cp.Classe.Progressoes
+                .Where(prog => prog.Nivel == cp.Nivel)
+                .Select(prog => new
+                {
+                    prog.Nivel,
+                    prog.BonusProficiencia,
+                    prog.TruquesConhecidos,
+                    prog.MagiasConhecidas,
+                    prog.EspacosMagia,
+                    prog.NivelMagia,
+                    prog.InvocacoesConhecidas
+                })
+                .FirstOrDefault(),
+            Caracteristicas = cp.Classe.Caracteristicas
+                .Where(car => car.Nivel <= cp.Nivel)
+                .Select(car => new
+                {
+                    car.Id,
+                    car.Nivel,
+                    car.Nome,
+                    car.Descricao
+                }).ToList()
+        })
+    });
+})
+.WithName("GetPersonagemClasse");
+
+app.MapGet("/api/personagens/ficha", async (string codigo, AppDbContext db) =>
+{
+    var codeLower = codigo.ToLower();
+    var p = await db.Personagens
+        .AsNoTracking()
+        .AsSplitQuery()
+        .Include(x => x.ClassesPersonagens)
+            .ThenInclude(cp => cp.Classe)
+                .ThenInclude(c => c.Progressoes)
+        .Include(x => x.ClassesPersonagens)
+            .ThenInclude(cp => cp.Subclasse)
+        .Include(x => x.PersonagensPericias)
+        .Include(x => x.Raca)
+            .ThenInclude(r => r.TracosRaciais)
+                .ThenInclude(t => t.TracosRaciaisPericias)
+        .Include(x => x.Acoes)
+        .Include(x => x.Proficiencias)
+        .Include(x => x.Salvaguardas)
+        .Include(x => x.PersonagensIdiomas)
+            .ThenInclude(pi => pi.Idioma)
+        .Include(x => x.PersonagensMagias)
+            .ThenInclude(pm => pm.Magia)
+        .FirstOrDefaultAsync(x => x.Codigo == codeLower);
+
+    if (p == null)
+    {
+        return Results.NotFound(new { Message = $"Personagem com código '{codigo}' não encontrado." });
+    }
+
+    var todasPericias = await db.Pericias.AsNoTracking().OrderBy(per => per.Nome).ToListAsync();
+    var nivelTotal = p.ClassesPersonagens.Sum(cp => cp.Nivel);
+    var bonusProficiencia = 2 + (nivelTotal - 1) / 4;
+
+    int ObterModificador(int valor) => (int)Math.Floor((valor - 10) / 2.0);
+
+    var mods = new Dictionary<string, int>
+    {
+        { "Força", ObterModificador(p.Forca) },
+        { "Destreza", ObterModificador(p.Destreza) },
+        { "Constituição", ObterModificador(p.Constituicao) },
+        { "Inteligência", ObterModificador(p.Inteligencia) },
+        { "Sabedoria", ObterModificador(p.Sabedoria) },
+        { "Carisma", ObterModificador(p.Carisma) }
+    };
+
+    var salvaguardasObj = new[] { "Força", "Destreza", "Constituição", "Inteligência", "Sabedoria", "Carisma" }.Select(attr =>
+    {
+        var dbKey = attr switch
+        {
+            "Força" => "Forca",
+            "Constituição" => "Constituicao",
+            "Inteligência" => "Inteligencia",
+            _ => attr
+        };
+        var isProf = p.Salvaguardas.Any(s => s.Atributo.Equals(dbKey, StringComparison.OrdinalIgnoreCase) && s.IsProficiente);
+        var mod = mods[attr];
+        var valor = mod + (isProf ? bonusProficiencia : 0);
+        return new
+        {
+            Atributo = attr,
+            Modificador = mod,
+            IsProficiente = isProf,
+            Valor = valor
+        };
+    }).ToList();
+
+    var classStr = p.ClassesPersonagens.OrderBy(cp => cp.IdClasse).Select(cp => cp.Subclasse != null ? $"{cp.Classe.Nome} / {cp.Subclasse.Nome}" : cp.Classe.Nome).FirstOrDefault() ?? "Sem Classe";
+
+    return Results.Ok(new
+    {
+        p.Id,
+        p.Nome,
+        p.Codigo,
+        Raca = p.Raca.Nome,
+        RacaInfo = new
+        {
+            p.Raca.Nome,
+            p.Raca.Descricao,
+            p.Raca.TipoCriatura,
+            p.Raca.Tamanho,
+            p.Raca.Deslocamento
+        },
+        TracosRaciais = p.Raca.TracosRaciais.Select(t => new
+        {
+            t.Id,
+            t.Nome,
+            t.Descricao
+        }).ToList(),
+        Classe = p.ClassesPersonagens.OrderBy(cp => cp.IdClasse).Select(cp => cp.Classe.Nome).FirstOrDefault() ?? "Sem Classe",
+        Subclasse = p.ClassesPersonagens.OrderBy(cp => cp.IdClasse).Select(cp => cp.Subclasse != null ? cp.Subclasse.Nome : null).FirstOrDefault(),
+        Nivel = p.ClassesPersonagens.Sum(cp => cp.Nivel),
+        ClassAndSubclass = classStr,
+        p.Alinhamento,
+        p.Forca,
+        p.Destreza,
+        p.Constituicao,
+        p.Inteligencia,
+        p.Sabedoria,
+        p.Carisma,
+        p.VidaMaxima,
+        p.VidaAtual,
+        Classes = p.ClassesPersonagens.Select(cp => new
+        {
+            cp.Classe.Nome,
+            Subclasse = cp.Subclasse != null ? cp.Subclasse.Nome : null,
+            cp.Classe.DadoVida,
+            cp.Classe.Deslocamento,
+            cp.Nivel,
+            Progresso = cp.Classe.Progressoes
+                .Where(prog => prog.Nivel == cp.Nivel)
+                .Select(prog => new
+                {
+                    prog.Nivel,
+                    prog.BonusProficiencia,
+                    prog.TruquesConhecidos,
+                    prog.MagiasConhecidas,
+                    prog.EspacosMagia,
+                    prog.NivelMagia,
+                    prog.InvocacoesConhecidas
+                })
+                .FirstOrDefault()
+        }),
+        Pericias = todasPericias.Select(per =>
+        {
+            var pp = p.PersonagensPericias.FirstOrDefault(x => x.IdPericia == per.Id);
+            var isProficienteManual = pp?.IsProficiente ?? false;
+            var isMaestriaManual = pp?.IsMaestria ?? false;
+
+            var tracoRacialQueDaPericia = p.Raca.TracosRaciais
+                .FirstOrDefault(t => t.TracosRaciaisPericias.Any(trp => trp.IdPericia == per.Id));
+            var isProficienteRacial = tracoRacialQueDaPericia != null;
+            
+            var isMaestriaRacial = tracoRacialQueDaPericia != null && tracoRacialQueDaPericia.TracosRaciaisPericias
+                .Any(trp => trp.IdPericia == per.Id && trp.IsMaestria);
+
+            var isProf = isProficienteManual || isProficienteRacial;
+            var isMaestria = isMaestriaManual || isMaestriaRacial;
+
+            string? origem = null;
+            if (isProficienteRacial)
+            {
+                origem = $"Raça ({p.Raca.Nome}) - Traço ({tracoRacialQueDaPericia!.Nome})";
+            }
+            else if (isProficienteManual)
+            {
+                origem = pp?.Origem;
+            }
+
+            return new
+            {
+                Id = per.Id,
+                Nome = per.Nome,
+                ModificadorAtributo = per.ModificadorAtributo,
+                Proficiente = isProf,
+                Maestria = isMaestria,
+                Origem = origem
+            };
+        }).ToList(),
+        Salvaguardas = salvaguardasObj,
+        Acoes = p.Acoes.Select(a => new
+        {
+            a.Id,
+            a.Nome,
+            a.TipoAcao,
+            a.Alcance,
+            a.BonusAcerto,
+            a.Dano,
+            a.TipoDano,
+            a.Descricao,
+            a.AcertoTooltip,
+            a.DanoTooltip
+        }).ToList(),
+        Proficiencias = p.Proficiencias.Select(pr => new
+        {
+            pr.Id,
+            pr.Tipo,
+            pr.Nome,
+            pr.Origem
+        }).ToList(),
+        Idiomas = p.PersonagensIdiomas.Select(pi => pi.Idioma.Nome).ToList(),
+        Magias = p.PersonagensMagias.Select(pm => new
+        {
+            pm.Magia.Id,
+            pm.Magia.Nome,
+            pm.Magia.Nivel,
+            pm.Magia.Descricao
+        }).ToList()
+    });
+})
+.WithName("GetPersonagemFicha");
 
 app.MapGet("/api/pericias", async (AppDbContext db) =>
 {
