@@ -7,7 +7,8 @@ var builder = WebApplication.CreateBuilder(args);
 // Add DbContext using PostgreSQL connection string
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
 builder.Services.AddDbContext<AppDbContext>(options =>
-    options.UseNpgsql(connectionString, b => b.MigrationsAssembly("Infrastructure")));
+    options.UseNpgsql(connectionString, b => b.MigrationsAssembly("Infrastructure"))
+           .ConfigureWarnings(w => w.Ignore(Microsoft.EntityFrameworkCore.Diagnostics.RelationalEventId.PendingModelChangesWarning)));
 
 // Enable CORS for Angular frontend local server
 builder.Services.AddCors(options =>
@@ -290,11 +291,25 @@ app.MapGet("/api/personagens/detalhes", async (string codigo, AppDbContext db) =
     var codeLower = codigo.ToLower();
     var p = await db.Personagens
         .AsNoTracking()
-        .Include(x => x.ClassesPersonagens)
-            .ThenInclude(cp => cp.Classe)
-        .Include(x => x.ClassesPersonagens)
-            .ThenInclude(cp => cp.Subclasse)
-        .Include(x => x.Raca)
+        .Select(x => new
+        {
+            x.Id,
+            x.Nome,
+            x.Codigo,
+            x.Base64Imagem,
+            Raca = x.Raca.Nome,
+            Classes = x.ClassesPersonagens.Select(cp => new { cp.Classe.Nome, Subclasse = cp.Subclasse != null ? cp.Subclasse.Nome : null, cp.Nivel }),
+            x.Alinhamento,
+            x.Forca,
+            x.Destreza,
+            x.Constituicao,
+            x.Inteligencia,
+            x.Sabedoria,
+            x.Carisma,
+            x.VidaMaxima,
+            x.VidaAtual,
+            PrimeiroCapitulo = x.Historias.OrderBy(h => h.Capitulo).Select(h => h.Texto).FirstOrDefault()
+        })
         .FirstOrDefaultAsync(x => x.Codigo == codeLower);
 
     if (p == null)
@@ -302,7 +317,7 @@ app.MapGet("/api/personagens/detalhes", async (string codigo, AppDbContext db) =
         return Results.NotFound(new { Message = $"Personagem com código '{codigo}' não encontrado." });
     }
 
-    var classStr = p.ClassesPersonagens.OrderBy(cp => cp.IdClasse).Select(cp => cp.Subclasse != null ? $"{cp.Classe.Nome} / {cp.Subclasse.Nome}" : cp.Classe.Nome).FirstOrDefault() ?? "Sem Classe";
+    var classStr = p.Classes.OrderBy(cp => cp.Nome).Select(cp => cp.Subclasse != null ? $"{cp.Nome} / {cp.Subclasse}" : cp.Nome).FirstOrDefault() ?? "Sem Classe";
 
     return Results.Ok(new
     {
@@ -310,9 +325,9 @@ app.MapGet("/api/personagens/detalhes", async (string codigo, AppDbContext db) =
         p.Nome,
         p.Codigo,
         p.Base64Imagem,
-        Raca = p.Raca.Nome,
+        Raca = p.Raca,
         ClassAndSubclass = classStr,
-        Nivel = p.ClassesPersonagens.Sum(cp => cp.Nivel),
+        Nivel = p.Classes.Sum(cp => cp.Nivel),
         p.Alinhamento,
         p.Forca,
         p.Destreza,
@@ -321,7 +336,8 @@ app.MapGet("/api/personagens/detalhes", async (string codigo, AppDbContext db) =
         p.Sabedoria,
         p.Carisma,
         p.VidaMaxima,
-        p.VidaAtual
+        p.VidaAtual,
+        History = p.PrimeiroCapitulo ?? "História em desenvolvimento. Em breve novos registros."
     });
 })
 .WithName("GetPersonagemDetalhes");
@@ -474,6 +490,8 @@ app.MapGet("/api/personagens/ficha", async (string codigo, AppDbContext db) =>
             .ThenInclude(pi => pi.Idioma)
         .Include(x => x.PersonagensMagias)
             .ThenInclude(pm => pm.Magia)
+        .Include(x => x.Equipamentos)
+            .ThenInclude(pe => pe.Equipamento)
         .FirstOrDefaultAsync(x => x.Codigo == codeLower);
 
     if (p == null)
@@ -638,6 +656,29 @@ app.MapGet("/api/personagens/ficha", async (string codigo, AppDbContext db) =>
             pm.Magia.Nome,
             pm.Magia.Nivel,
             pm.Magia.Descricao
+        }).ToList(),
+        Equipamentos = p.Equipamentos.Select(pe => new
+        {
+            pe.Id,
+            pe.IdEquipamento,
+            pe.IsEquipado,
+            Equipamento = new
+            {
+                pe.Equipamento.Id,
+                pe.Equipamento.Nome,
+                pe.Equipamento.Descricao,
+                pe.Equipamento.Peso,
+                pe.Equipamento.ProficienciaRequerida,
+                pe.Equipamento.TipoEquipamento,
+                pe.Equipamento.Propriedades,
+                pe.Equipamento.Dano,
+                pe.Equipamento.TipoDano,
+                pe.Equipamento.ModificadorClasseArmadura,
+                pe.Equipamento.ClasseArmadura,
+                pe.Equipamento.PermiteDestreza,
+                pe.Equipamento.ForcaRequerida,
+                pe.Equipamento.DesvantagemFurtividade
+            }
         }).ToList()
     });
 })
@@ -755,6 +796,132 @@ app.MapPost("/api/personagens", async (PersonagemDto dto, AppDbContext db) =>
     });
 })
 .WithName("CreatePersonagem");
+
+app.MapPost("/api/personagens/{codigo}/equipamentos/{id}/equipar", async (string codigo, int id, bool confirm, AppDbContext db) =>
+{
+    var codeLower = codigo.ToLower();
+    var character = await db.Personagens
+        .Include(p => p.Equipamentos)
+            .ThenInclude(pe => pe.Equipamento)
+        .Include(p => p.Proficiencias)
+        .FirstOrDefaultAsync(p => p.Codigo == codeLower);
+
+    if (character == null)
+    {
+        return Results.NotFound(new { Message = $"Personagem com código '{codigo}' não encontrado." });
+    }
+
+    var peToEquip = character.Equipamentos.FirstOrDefault(pe => pe.Id == id);
+    if (peToEquip == null)
+    {
+        return Results.NotFound(new { Message = "Equipamento não encontrado no inventário do personagem." });
+    }
+
+    if (peToEquip.Equipamento.TipoEquipamento == "Outro")
+    {
+        return Results.BadRequest(new { Message = "Este item não é equipável." });
+    }
+
+    if (peToEquip.IsEquipado)
+    {
+        return Results.Ok(new { Message = "O item já está equipado." });
+    }
+
+    // Validação de proficiência
+    if (!string.IsNullOrEmpty(peToEquip.Equipamento.ProficienciaRequerida))
+    {
+        var temProf = character.Proficiencias.Any(p => p.Nome.Equals(peToEquip.Equipamento.ProficienciaRequerida, StringComparison.OrdinalIgnoreCase));
+        if (!temProf)
+        {
+            return Results.BadRequest(new { Message = $"Você não tem proficiência para equipar o item {peToEquip.Equipamento.Nome}!" });
+        }
+    }
+
+    // Regra especial para Armadura
+    if (peToEquip.Equipamento.TipoEquipamento == "Armadura")
+    {
+        var activeArmadura = character.Equipamentos.FirstOrDefault(pe => pe.IsEquipado && pe.Equipamento.TipoEquipamento == "Armadura");
+        if (activeArmadura != null)
+        {
+            if (!confirm)
+            {
+                return Results.Ok(new { RequiresConfirmation = true, Message = $"Você já possui a armadura {activeArmadura.Equipamento.Nome} equipada. Deseja substituí-la por {peToEquip.Equipamento.Nome}?" });
+            }
+            else
+            {
+                activeArmadura.IsEquipado = false;
+            }
+        }
+    }
+
+    // Regra especial para Mãos (Arma ou Escudo)
+    if (peToEquip.Equipamento.TipoEquipamento == "Arma" || peToEquip.Equipamento.TipoEquipamento == "Escudo")
+    {
+        var isTwoHanded = peToEquip.Equipamento.Propriedades.Any(p => p.Equals("Duas mãos", StringComparison.OrdinalIgnoreCase));
+        var equippedHandItems = character.Equipamentos
+            .Where(pe => pe.IsEquipado && (pe.Equipamento.TipoEquipamento == "Arma" || pe.Equipamento.TipoEquipamento == "Escudo"))
+            .ToList();
+
+        if (isTwoHanded)
+        {
+            // Desequipa tudo nas mãos
+            foreach (var item in equippedHandItems)
+            {
+                item.IsEquipado = false;
+            }
+        }
+        else
+        {
+            // Se houver alguma arma de duas mãos equipada, desequipa ela
+            var twoHanded = equippedHandItems.FirstOrDefault(item => item.Equipamento.Propriedades.Any(p => p.Equals("Duas mãos", StringComparison.OrdinalIgnoreCase)));
+            if (twoHanded != null)
+            {
+                twoHanded.IsEquipado = false;
+                equippedHandItems.Remove(twoHanded);
+            }
+
+            // Se após remover a de duas mãos ainda temos 2 ou mais itens equipados nas mãos (ex: 2 adagas)
+            var currentlyEquipped = equippedHandItems.Where(item => item.IsEquipado).ToList();
+            if (currentlyEquipped.Count >= 2)
+            {
+                // Desequipa o mais antigo (menor Id de PersonagemEquipamento)
+                var oldest = currentlyEquipped.OrderBy(item => item.Id).First();
+                oldest.IsEquipado = false;
+            }
+        }
+    }
+
+    peToEquip.IsEquipado = true;
+    await db.SaveChangesAsync();
+
+    return Results.Ok(new { Message = "Item equipado com sucesso." });
+})
+.WithName("EquiparEquipamento");
+
+app.MapPost("/api/personagens/{codigo}/equipamentos/{id}/desequipar", async (string codigo, int id, AppDbContext db) =>
+{
+    var codeLower = codigo.ToLower();
+    var character = await db.Personagens
+        .Include(p => p.Equipamentos)
+        .FirstOrDefaultAsync(p => p.Codigo == codeLower);
+
+    if (character == null)
+    {
+        return Results.NotFound(new { Message = $"Personagem com código '{codigo}' não encontrado." });
+    }
+
+    var pe = character.Equipamentos.FirstOrDefault(x => x.Id == id);
+    if (pe == null)
+    {
+        return Results.NotFound(new { Message = "Equipamento não encontrado no inventário do personagem." });
+    }
+
+    pe.IsEquipado = false;
+    await db.SaveChangesAsync();
+
+    return Results.Ok(new { Message = "Item desequipado com sucesso." });
+})
+.WithName("DesequiparEquipamento");
 
 app.Run();
 

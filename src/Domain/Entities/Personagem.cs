@@ -33,4 +33,5 @@ public class Personagem
     public ICollection<PersonagemSalvaguarda> Salvaguardas { get; set; } = new List<PersonagemSalvaguarda>();
     public ICollection<PersonagemIdioma> PersonagensIdiomas { get; set; } = new List<PersonagemIdioma>();
     public ICollection<PersonagemMagia> PersonagensMagias { get; set; } = new List<PersonagemMagia>();
+    public ICollection<PersonagemEquipamento> Equipamentos { get; set; } = new List<PersonagemEquipamento>();
 }

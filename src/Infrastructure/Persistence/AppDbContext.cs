@@ -24,6 +24,8 @@ public class AppDbContext : DbContext
     public DbSet<Magia> Magias => Set<Magia>();
     public DbSet<PersonagemMagia> PersonagensMagias => Set<PersonagemMagia>();
     public DbSet<CaracteristicaClasse> CaracteristicasClasses => Set<CaracteristicaClasse>();
+    public DbSet<Equipamento> Equipamentos => Set<Equipamento>();
+    public DbSet<PersonagemEquipamento> PersonagensEquipamentos => Set<PersonagemEquipamento>();
 
     public AppDbContext(DbContextOptions<AppDbContext> options) : base(options)
     {
@@ -326,6 +328,109 @@ public class AppDbContext : DbContext
                 .HasForeignKey(cc => cc.IdClasse)
                 .OnDelete(DeleteBehavior.Cascade);
         });
+
+        // Configure Equipamento entity
+        modelBuilder.Entity<Equipamento>(entity =>
+        {
+            entity.ToTable("Equipamentos");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Nome).IsRequired().HasMaxLength(150);
+            entity.Property(e => e.TipoEquipamento).IsRequired().HasMaxLength(50);
+            entity.Property(e => e.Propriedades).HasColumnType("text[]");
+        });
+
+        // Configure PersonagemEquipamento entity
+        modelBuilder.Entity<PersonagemEquipamento>(entity =>
+        {
+            entity.ToTable("PersonagensEquipamentos");
+            entity.HasKey(pe => pe.Id);
+
+            entity.HasOne(pe => pe.Personagem)
+                .WithMany(p => p.Equipamentos)
+                .HasForeignKey(pe => pe.IdPersonagem)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(pe => pe.Equipamento)
+                .WithMany()
+                .HasForeignKey(pe => pe.IdEquipamento)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        // Seeding Equipamentos
+        modelBuilder.Entity<Equipamento>().HasData(
+            new Equipamento
+            {
+                Id = 1,
+                Nome = "Alaúde",
+                TipoEquipamento = "Outro",
+                Peso = 1.0,
+                Descricao = "Um belo alaúde de madeira polida, usado por bardos e músicos."
+            },
+            new Equipamento
+            {
+                Id = 2,
+                Nome = "Bolsa de componentes",
+                TipoEquipamento = "Outro",
+                Peso = 1.0,
+                Descricao = "Uma bolsa de couro impermeável com todos os componentes materiais necessários para conjurar suas magias."
+            },
+            new Equipamento
+            {
+                Id = 3,
+                Nome = "Adaga",
+                TipoEquipamento = "Arma",
+                Peso = 0.5,
+                Dano = "1d4",
+                TipoDano = "perfurante",
+                ProficienciaRequerida = "Armas simples",
+                Propriedades = new List<string> { "Acuidade", "Leve", "Arremesso" }
+            },
+            new Equipamento
+            {
+                Id = 4,
+                Nome = "Clava Grande",
+                TipoEquipamento = "Arma",
+                Peso = 5.0,
+                Dano = "1d8",
+                TipoDano = "concussão",
+                ProficienciaRequerida = "Armas simples",
+                Propriedades = new List<string> { "Duas mãos", "Pesada" }
+            },
+            new Equipamento
+            {
+                Id = 5,
+                Nome = "Escudo",
+                TipoEquipamento = "Escudo",
+                Peso = 3.0,
+                ModificadorClasseArmadura = 2,
+                ProficienciaRequerida = "Escudos",
+                Descricao = "Um escudo de metal gravado com o brasão do reino, adiciona +2 à Classe de Armadura (CA)."
+            },
+            new Equipamento
+            {
+                Id = 6,
+                Nome = "Armadura de Couro Batido",
+                TipoEquipamento = "Armadura",
+                Peso = 6.5,
+                ClasseArmadura = 12,
+                PermiteDestreza = true,
+                ForcaRequerida = 0,
+                DesvantagemFurtividade = false,
+                ProficienciaRequerida = "Armaduras leves",
+                Descricao = "Uma armadura feita de couro resistente, reforçado com rebites de metal. Fornece CA 12 + Modificador de Destreza."
+            }
+        );
+
+        // Seeding Kairo's Inventory (IdPersonagem = 1)
+        modelBuilder.Entity<PersonagemEquipamento>().HasData(
+            new PersonagemEquipamento { Id = 1, IdPersonagem = 1, IdEquipamento = 1, IsEquipado = false },
+            new PersonagemEquipamento { Id = 2, IdPersonagem = 1, IdEquipamento = 2, IsEquipado = false },
+            new PersonagemEquipamento { Id = 3, IdPersonagem = 1, IdEquipamento = 3, IsEquipado = false },
+            new PersonagemEquipamento { Id = 4, IdPersonagem = 1, IdEquipamento = 3, IsEquipado = false },
+            new PersonagemEquipamento { Id = 5, IdPersonagem = 1, IdEquipamento = 4, IsEquipado = false },
+            new PersonagemEquipamento { Id = 6, IdPersonagem = 1, IdEquipamento = 5, IsEquipado = false },
+            new PersonagemEquipamento { Id = 7, IdPersonagem = 1, IdEquipamento = 6, IsEquipado = false }
+        );
 
         // Seeding Classes
         modelBuilder.Entity<Classe>().HasData(
