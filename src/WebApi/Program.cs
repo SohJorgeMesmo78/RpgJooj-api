@@ -298,7 +298,7 @@ app.MapGet("/api/personagens/detalhes", async (string codigo, AppDbContext db) =
             x.Codigo,
             x.Base64Imagem,
             Raca = x.Raca.Nome,
-            Classes = x.ClassesPersonagens.Select(cp => new { cp.Classe.Nome, Subclasse = cp.Subclasse != null ? cp.Subclasse.Nome : null, cp.Nivel }),
+            Classes = x.ClassesPersonagens.Select(cp => new { cp.Classe.Nome, Subclasse = cp.Subclasse != null ? cp.Subclasse.Nome : null, cp.Nivel, cp.SubclasseEscolha }),
             x.Alinhamento,
             x.Forca,
             x.Destreza,
@@ -317,7 +317,9 @@ app.MapGet("/api/personagens/detalhes", async (string codigo, AppDbContext db) =
         return Results.NotFound(new { Message = $"Personagem com código '{codigo}' não encontrado." });
     }
 
-    var classStr = p.Classes.OrderBy(cp => cp.Nome).Select(cp => cp.Subclasse != null ? $"{cp.Nome} / {cp.Subclasse}" : cp.Nome).FirstOrDefault() ?? "Sem Classe";
+    var classStr = p.Classes.OrderBy(cp => cp.Nome).Select(cp => cp.Subclasse != null 
+        ? (string.IsNullOrEmpty(cp.SubclasseEscolha) ? $"{cp.Nome} / {cp.Subclasse}" : $"{cp.Nome} / {cp.Subclasse} ({cp.SubclasseEscolha})") 
+        : cp.Nome).FirstOrDefault() ?? "Sem Classe";
 
     return Results.Ok(new
     {
@@ -422,6 +424,7 @@ app.MapGet("/api/personagens/classe", async (string codigo, AppDbContext db) =>
                 .ThenInclude(c => c.Caracteristicas)
         .Include(x => x.ClassesPersonagens)
             .ThenInclude(cp => cp.Subclasse)
+                .ThenInclude(s => s!.Caracteristicas)
         .FirstOrDefaultAsync(x => x.Codigo == codeLower);
 
     if (p == null)
@@ -436,8 +439,11 @@ app.MapGet("/api/personagens/classe", async (string codigo, AppDbContext db) =>
         p.Codigo,
         Classes = p.ClassesPersonagens.Select(cp => new
         {
+            cp.IdClasse,
+            cp.IdSubclasse,
             cp.Classe.Nome,
             Subclasse = cp.Subclasse != null ? cp.Subclasse.Nome : null,
+            SubclasseEscolha = cp.SubclasseEscolha,
             cp.Classe.DadoVida,
             cp.Classe.Deslocamento,
             cp.Nivel,
@@ -456,9 +462,15 @@ app.MapGet("/api/personagens/classe", async (string codigo, AppDbContext db) =>
                 .FirstOrDefault(),
             Caracteristicas = cp.Classe.Caracteristicas
                 .Where(car => car.Nivel <= cp.Nivel)
+                .Concat(cp.Subclasse != null 
+                    ? cp.Subclasse.Caracteristicas.Where(car => car.Nivel <= cp.Nivel) 
+                    : new List<CaracteristicaClasse>())
+                .OrderBy(car => car.Nivel)
+                .ThenBy(car => car.Id)
                 .Select(car => new
                 {
                     car.Id,
+                    car.IdClasse,
                     car.Nivel,
                     car.Nome,
                     car.Descricao
@@ -478,7 +490,11 @@ app.MapGet("/api/personagens/ficha", async (string codigo, AppDbContext db) =>
             .ThenInclude(cp => cp.Classe)
                 .ThenInclude(c => c.Progressoes)
         .Include(x => x.ClassesPersonagens)
+            .ThenInclude(cp => cp.Classe)
+                .ThenInclude(c => c.Caracteristicas)
+        .Include(x => x.ClassesPersonagens)
             .ThenInclude(cp => cp.Subclasse)
+                .ThenInclude(s => s!.Caracteristicas)
         .Include(x => x.PersonagensPericias)
         .Include(x => x.Raca)
             .ThenInclude(r => r.TracosRaciais)
@@ -536,7 +552,9 @@ app.MapGet("/api/personagens/ficha", async (string codigo, AppDbContext db) =>
         };
     }).ToList();
 
-    var classStr = p.ClassesPersonagens.OrderBy(cp => cp.IdClasse).Select(cp => cp.Subclasse != null ? $"{cp.Classe.Nome} / {cp.Subclasse.Nome}" : cp.Classe.Nome).FirstOrDefault() ?? "Sem Classe";
+    var classStr = p.ClassesPersonagens.OrderBy(cp => cp.IdClasse).Select(cp => cp.Subclasse != null 
+        ? (string.IsNullOrEmpty(cp.SubclasseEscolha) ? $"{cp.Classe.Nome} / {cp.Subclasse.Nome}" : $"{cp.Classe.Nome} / {cp.Subclasse.Nome} ({cp.SubclasseEscolha})") 
+        : cp.Classe.Nome).FirstOrDefault() ?? "Sem Classe";
 
     return Results.Ok(new
     {
@@ -578,8 +596,11 @@ app.MapGet("/api/personagens/ficha", async (string codigo, AppDbContext db) =>
         p.PecaPlatina,
         Classes = p.ClassesPersonagens.Select(cp => new
         {
+            cp.IdClasse,
+            cp.IdSubclasse,
             cp.Classe.Nome,
             Subclasse = cp.Subclasse != null ? cp.Subclasse.Nome : null,
+            SubclasseEscolha = cp.SubclasseEscolha,
             cp.Classe.DadoVida,
             cp.Classe.Deslocamento,
             cp.Nivel,
@@ -595,7 +616,22 @@ app.MapGet("/api/personagens/ficha", async (string codigo, AppDbContext db) =>
                     prog.NivelMagia,
                     prog.InvocacoesConhecidas
                 })
-                .FirstOrDefault()
+                .FirstOrDefault(),
+            Caracteristicas = cp.Classe.Caracteristicas
+                .Where(car => car.Nivel <= cp.Nivel)
+                .Concat(cp.Subclasse != null 
+                    ? cp.Subclasse.Caracteristicas.Where(car => car.Nivel <= cp.Nivel) 
+                    : new List<CaracteristicaClasse>())
+                .OrderBy(car => car.Nivel)
+                .ThenBy(car => car.Id)
+                .Select(car => new
+                {
+                    car.Id,
+                    car.IdClasse,
+                    car.Nivel,
+                    car.Nome,
+                    car.Descricao
+                }).ToList()
         }),
         Pericias = todasPericias.Select(per =>
         {

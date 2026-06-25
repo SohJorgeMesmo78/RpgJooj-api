@@ -12,4 +12,5 @@ public class ClassePersonagem
     public Classe? Subclasse { get; set; }
 
     public int Nivel { get; set; }
+    public string? SubclasseEscolha { get; set; }
 }

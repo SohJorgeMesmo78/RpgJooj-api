@@ -530,7 +530,7 @@ public class AppDbContext : DbContext
 
         // Seeding ClassesPersonagens
         modelBuilder.Entity<ClassePersonagem>().HasData(
-            new ClassePersonagem { IdPersonagem = 1, IdClasse = 1, IdSubclasse = 3, Nivel = 1 }
+            new ClassePersonagem { IdPersonagem = 1, IdClasse = 1, IdSubclasse = 3, Nivel = 1, SubclasseEscolha = "Djinni" }
         );
 
         // Seeding ClasseProgressoes
@@ -575,7 +575,30 @@ public class AppDbContext : DbContext
             new CaracteristicaClasse { Id = 14, IdClasse = 1, Nivel = 16, Nome = "Incremento no Valor de Habilidade", Descricao = "Você pode aumentar um valor de atributo de sua escolha em 2, ou dois valores de atributo de sua escolha em 1. Como normal, você não pode aumentar um valor de atributo acima de 20 usando essa característica." },
             new CaracteristicaClasse { Id = 15, IdClasse = 1, Nivel = 17, Nome = "Arcana Mística (9° nível)", Descricao = "Seu patrono confere a você um segredo mágico chamado de Arcana Mística. Escolha uma magia de 9º nível da lista de magias de bruxo como sua arcana mística. Você pode conjurar essa magia uma vez sem gastar um espaço de magia. Você deve terminar um descanso longo antes de poder fazer isso novamente." },
             new CaracteristicaClasse { Id = 16, IdClasse = 1, Nivel = 19, Nome = "Incremento no Valor de Habilidade", Descricao = "Você pode aumentar um valor de atributo de sua escolha em 2, ou dois valores de atributo de sua escolha em 1. Como normal, você não pode aumentar um valor de atributo acima de 20 usando essa característica." },
-            new CaracteristicaClasse { Id = 17, IdClasse = 1, Nivel = 20, Nome = "Mestre Místico", Descricao = "No 20º nível, você pode extrair de sua reserva interna de poder místico enquanto roga ao seu patrono para recuperar espaços de magia gastos. Você pode gastar 1 minuto implorando pela ajuda do seu patrono para recuperar todos os seus espaços de magia gastos da sua característica Magia de Pacto. Você deve terminar um descanso longo antes de usar esta característica novamente." }
+            new CaracteristicaClasse { Id = 17, IdClasse = 1, Nivel = 20, Nome = "Mestre Místico", Descricao = "No 20º nível, você pode extrair de sua reserva interna de poder místico enquanto roga ao seu patrono para recuperar espaços de magia gastos. Você pode gastar 1 minuto implorando pela ajuda do seu patrono para recuperar todos os seus espaços de magia gastos da sua característica Magia de Pacto. Você deve terminar um descanso longo antes de usar esta característica novamente." },
+            new CaracteristicaClasse 
+            { 
+                Id = 18, 
+                IdClasse = 3, 
+                Nivel = 1, 
+                Nome = "Descanso Engarrafado", 
+                Descricao = """
+Com uma ação, você pode desaparecer magicamente e entrar em seu receptáculo, que permanece no espaço que você deixou. O interior do receptáculo é um espaço extradimensional na forma de um cilindro de 6m de raio e 6m de altura, e lembra o objeto. O interior é mobiliado com almofadas e mesas baixas e fica em uma temperatura confortável. Enquanto dentro, você pode ouvir a área ao redor do receptáculo como se estivesse em seu espaço. Você pode permanecer dentro do receptáculo por uma quantia de horas igual a duas vezes seu bônus de proficiência. Você pode sair do receptáculo antes desse tempo se usar uma ação bônus para isso, se você morrer, ou se o receptáculo for destruído. Quando você sai desse receptáculo, você aparece no espaço desocupado mais próximo dele. Qualquer objeto deixado no receptáculo permanece lá até ser carregado para fora, e se o receptáculo for destruído, todo objeto contido por ele reaparece sem danos nos espaços desocupados mais próximos à antiga localização do receptáculo. Uma vez que entre no receptáculo, você não pode fazer isso novamente até terminar um descanso longo.
+
+A CA do receptáculo é igual à sua CD de magia. Ele tem pontos de vida igual ao seu nível de bruxo mais seu bônus de proficiência, e ele é imune a dano venenoso e psíquico.
+Se o receptáculo for destruído, você pode realizar uma cerimônia de 1 hora para receber um substituto de seu patrono. Essa cerimônia pode ser realizada durante um descanso curto ou longo, e o receptáculo anterior é destruído caso ainda exista. O receptáculo desaparece em um clarão de poder elemental quando você morre.
+"""
+            },
+            new CaracteristicaClasse 
+            { 
+                Id = 19, 
+                IdClasse = 3, 
+                Nivel = 1, 
+                Nome = "Ira do Gênio", 
+                Descricao = """
+Uma vez por turno, quando você acerta uma rolagem de ataque, você pode causar dano extra ao alvo igual ao seu bônus de proficiência. O tipo desse dano é determinado por seu patrono: contundente (dao), trovejante (djinni), ígneo (ifriti), ou gélido (marid).
+"""
+            }
         );
 
         // Seeding Magias
