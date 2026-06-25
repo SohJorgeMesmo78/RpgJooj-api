@@ -364,6 +364,7 @@ public class AppDbContext : DbContext
                 Nome = "Alaúde",
                 TipoEquipamento = "Outro",
                 Peso = 1.0,
+                Preco = "35 PO",
                 Descricao = "Um belo alaúde de madeira polida, usado por bardos e músicos."
             },
             new Equipamento
@@ -372,6 +373,7 @@ public class AppDbContext : DbContext
                 Nome = "Bolsa de componentes",
                 TipoEquipamento = "Outro",
                 Peso = 1.0,
+                Preco = "25 PO",
                 Descricao = "Uma bolsa de couro impermeável com todos os componentes materiais necessários para conjurar suas magias."
             },
             new Equipamento
@@ -382,6 +384,7 @@ public class AppDbContext : DbContext
                 Peso = 0.5,
                 Dano = "1d4",
                 TipoDano = "perfurante",
+                Preco = "2 PO",
                 ProficienciaRequerida = "Armas simples",
                 Propriedades = new List<string> { "Acuidade", "Leve", "Arremesso" }
             },
@@ -393,6 +396,7 @@ public class AppDbContext : DbContext
                 Peso = 5.0,
                 Dano = "1d8",
                 TipoDano = "concussão",
+                Preco = "2 PP",
                 ProficienciaRequerida = "Armas simples",
                 Propriedades = new List<string> { "Duas mãos", "Pesada" }
             },
@@ -403,6 +407,7 @@ public class AppDbContext : DbContext
                 TipoEquipamento = "Escudo",
                 Peso = 3.0,
                 ModificadorClasseArmadura = 2,
+                Preco = "10 PO",
                 ProficienciaRequerida = "Escudos",
                 Descricao = "Um escudo de metal gravado com o brasão do reino, adiciona +2 à Classe de Armadura (CA)."
             },
@@ -416,8 +421,18 @@ public class AppDbContext : DbContext
                 PermiteDestreza = true,
                 ForcaRequerida = 0,
                 DesvantagemFurtividade = false,
+                Preco = "45 PO",
                 ProficienciaRequerida = "Armaduras leves",
                 Descricao = "Uma armadura feita de couro resistente, reforçado com rebites de metal. Fornece CA 12 + Modificador de Destreza."
+            },
+            new Equipamento
+            {
+                Id = 7,
+                Nome = "Roupas de viajante",
+                TipoEquipamento = "Outro",
+                Peso = 1.8,
+                Preco = "2 PO",
+                Descricao = "Um conjunto de roupas robustas composto por botas, calças ou saia de lã, um cinto, uma túnica quente e um manto com capuz."
             }
         );
 
@@ -426,10 +441,9 @@ public class AppDbContext : DbContext
             new PersonagemEquipamento { Id = 1, IdPersonagem = 1, IdEquipamento = 1, IsEquipado = false },
             new PersonagemEquipamento { Id = 2, IdPersonagem = 1, IdEquipamento = 2, IsEquipado = false },
             new PersonagemEquipamento { Id = 3, IdPersonagem = 1, IdEquipamento = 3, IsEquipado = false },
-            new PersonagemEquipamento { Id = 4, IdPersonagem = 1, IdEquipamento = 3, IsEquipado = false },
-            new PersonagemEquipamento { Id = 5, IdPersonagem = 1, IdEquipamento = 4, IsEquipado = false },
-            new PersonagemEquipamento { Id = 6, IdPersonagem = 1, IdEquipamento = 5, IsEquipado = false },
-            new PersonagemEquipamento { Id = 7, IdPersonagem = 1, IdEquipamento = 6, IsEquipado = false }
+            new PersonagemEquipamento { Id = 4, IdPersonagem = 1, IdEquipamento = 5, IsEquipado = false },
+            new PersonagemEquipamento { Id = 5, IdPersonagem = 1, IdEquipamento = 6, IsEquipado = false },
+            new PersonagemEquipamento { Id = 6, IdPersonagem = 1, IdEquipamento = 7, IsEquipado = false }
         );
 
         // Seeding Classes
@@ -509,7 +523,8 @@ public class AppDbContext : DbContext
                 Sabedoria = 12,
                 Carisma = 19,
                 VidaMaxima = 9,
-                VidaAtual = 9
+                VidaAtual = 9,
+                PecaOuro = 57
             }
         );
 

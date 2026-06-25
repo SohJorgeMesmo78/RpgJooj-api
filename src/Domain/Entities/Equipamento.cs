@@ -11,6 +11,7 @@ public class Equipamento
     public string? ProficienciaRequerida { get; set; }
     public string TipoEquipamento { get; set; } = "Outro"; // Arma, Armadura, Escudo, Outro
     public List<string> Propriedades { get; set; } = new List<string>();
+    public string? Preco { get; set; }
 
     // Específicos de Arma
     public string? Dano { get; set; } // Ex: 1d4, 1d8

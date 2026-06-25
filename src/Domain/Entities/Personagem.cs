@@ -24,6 +24,13 @@ public class Personagem
     public int VidaMaxima { get; set; }
     public int VidaAtual { get; set; }
 
+    // Dinheiro / Moedas D&D
+    public int PecaCobre { get; set; }
+    public int PecaPrata { get; set; }
+    public int PecaElectro { get; set; }
+    public int PecaOuro { get; set; }
+    public int PecaPlatina { get; set; }
+
     // Navigation properties
     public ICollection<HistoriaPersonagem> Historias { get; set; } = new List<HistoriaPersonagem>();
     public ICollection<ClassePersonagem> ClassesPersonagens { get; set; } = new List<ClassePersonagem>();

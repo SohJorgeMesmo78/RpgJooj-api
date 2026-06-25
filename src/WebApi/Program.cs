@@ -571,6 +571,11 @@ app.MapGet("/api/personagens/ficha", async (string codigo, AppDbContext db) =>
         p.Carisma,
         p.VidaMaxima,
         p.VidaAtual,
+        p.PecaCobre,
+        p.PecaPrata,
+        p.PecaElectro,
+        p.PecaOuro,
+        p.PecaPlatina,
         Classes = p.ClassesPersonagens.Select(cp => new
         {
             cp.Classe.Nome,
@@ -677,7 +682,8 @@ app.MapGet("/api/personagens/ficha", async (string codigo, AppDbContext db) =>
                 pe.Equipamento.ClasseArmadura,
                 pe.Equipamento.PermiteDestreza,
                 pe.Equipamento.ForcaRequerida,
-                pe.Equipamento.DesvantagemFurtividade
+                pe.Equipamento.DesvantagemFurtividade,
+                pe.Equipamento.Preco
             }
         }).ToList()
     });
