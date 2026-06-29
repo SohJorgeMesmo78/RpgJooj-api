@@ -609,6 +609,83 @@ Uma vez por turno, quando você acerta uma rolagem de ataque, você pode causar 
                 Nome = "Raio místico",
                 Nivel = 0,
                 Descricao = "Um feixe de energia estalante vai em direção a uma criatura. Faça um ataque à distância com magia. Com um acerto, o alvo sofre 1d10 de dano de energia. **Explosão Agonizante:** Você adiciona seu Modificador de Carisma (+4) ao dano. Dano total por acerto: 1d10+4 de Energia."
+            },
+            new Magia
+            {
+                Id = 2,
+                Nome = "Ilusão Menor",
+                Nivel = 0,
+                Descricao = "Você cria um som ou uma imagem de um objeto dentro do alcance, que permanece pela duração."
+            },
+            new Magia
+            {
+                Id = 3,
+                Nome = "Mensagem",
+                Nivel = 0,
+                Descricao = "Você aponta seu dedo para uma criatura dentro do alcance e sussurra uma mensagem. O alvo ouve a mensagem e pode responder com um sussurro."
+            },
+            new Magia
+            {
+                Id = 4,
+                Nome = "Mãos mágicas",
+                Nivel = 0,
+                Descricao = "Uma mão espectral flutuante aparece em um ponto à sua escolha, dentro do alcance. A mão permanece pela duração ou até você dispensá-la."
+            },
+            new Magia
+            {
+                Id = 5,
+                Nome = "Prestidigitação",
+                Nivel = 0,
+                Descricao = "Este truque é um truque mágico simples que conjuradores iniciantes usam para praticar."
+            },
+            new Magia
+            {
+                Id = 6,
+                Nome = "Amizade",
+                Nivel = 0,
+                Descricao = "Você tem vantagem em todos os testes de Carisma direcionados a uma criatura à sua escolha que não seja hostil a você."
+            },
+            new Magia
+            {
+                Id = 7,
+                Nome = "Bruxaria (Hex)",
+                Nivel = 1,
+                Descricao = "Você roga uma maldição em uma criatura dentro do alcance. Até a magia acabar, você causa 1d6 de dano necrótico extra ao alvo sempre que acertá-lo com um ataque."
+            },
+            new Magia
+            {
+                Id = 8,
+                Nome = "Detectar Magia",
+                Nivel = 1,
+                Descricao = "Pela duração, você sente a presença de magia a até 9 metros de você. Se você sentir magia dessa forma, você pode usar sua ação para ver uma aura tênue ao redor de qualquer criatura ou objeto visível na área que possua magia."
+            },
+            new Magia
+            {
+                Id = 9,
+                Nome = "Onda de Trovão",
+                Nivel = 1,
+                Descricao = "Uma onda de força trovejante irrompe a partir de você. Cada criatura num cubo de 4,5 metros centrado em você deve realizar um teste de resistência de Constituição."
+            },
+            new Magia
+            {
+                Id = 10,
+                Nome = "Encontrar Familiar",
+                Nivel = 1,
+                Descricao = "Você conjura um espírito que assume a forma de um animal de sua escolha: morcego, gato, caranguejo, sapo, falcão, lagarto, polvo, coruja, rato, corvo, cavalo-marinho, aranha ou doninha."
+            },
+            new Magia
+            {
+                Id = 11,
+                Nome = "Passo Nebuloso",
+                Nivel = 2,
+                Descricao = "Brevemente envolto por uma fumaça prateada, você se teletransporta a até 9 metros para um local desocupado que você possa ver."
+            },
+            new Magia
+            {
+                Id = 12,
+                Nome = "Sugestão",
+                Nivel = 2,
+                Descricao = "Você sugere um curso de atividade (limitado a uma frase ou duas) e magicamente influencia uma criatura que você possa ver dentro do alcance e que possa ouvir e compreender você."
             }
         );
 

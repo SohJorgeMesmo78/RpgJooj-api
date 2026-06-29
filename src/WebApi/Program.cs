@@ -43,6 +43,36 @@ using (var scope = app.Services.CreateScope())
     {
         var db = services.GetRequiredService<AppDbContext>();
         db.Database.Migrate();
+
+        // Custom seed for new equipments
+        if (!db.Equipamentos.Any(e => e.Id == 8))
+        {
+            db.Equipamentos.AddRange(
+                new Equipamento { Id = 8, Nome = "Besta Leve", TipoEquipamento = "Arma", Peso = 2.2, Dano = "1d8", TipoDano = "perfurante", Preco = "25 PO", ProficienciaRequerida = "Armas simples", Propriedades = new List<string> { "Duas mãos", "Distância (24/96)", "Recarga" } },
+                new Equipamento { Id = 9, Nome = "Foco Arcano", TipoEquipamento = "Outro", Peso = 0.5, Preco = "10 PO", Descricao = "Um cajado, orbe, cristal ou varinha usado para canalizar magias de bruxo." },
+                new Equipamento { Id = 10, Nome = "Pacote de estudioso", TipoEquipamento = "Outro", Peso = 4.0, Preco = "40 PO", Descricao = "Inclui uma mochila, um livro de estudo, um tinteiro, uma pena, 10 folhas de pergaminho, um saquinho de areia e uma pequena faca." },
+                new Equipamento { Id = 11, Nome = "Pacote de explorador", TipoEquipamento = "Outro", Peso = 5.0, Preco = "10 PO", Descricao = "Inclui uma mochila, um saco de dormir, um kit de refeição, uma caixa de pederneiras, 10 tochas, 10 dias de rações e um cantil." },
+                new Equipamento { Id = 12, Nome = "Pacote de aventureiro", TipoEquipamento = "Outro", Peso = 6.0, Preco = "12 PO", Descricao = "Inclui uma mochila, um pé de cabra, um martelo, 10 pítons, 10 tochas, uma caixa de pederneiras, 10 dias de rações, um cantil e 15m de corda." },
+                new Equipamento { Id = 13, Nome = "Espada Curta", TipoEquipamento = "Arma", Peso = 1.0, Dano = "1d6", TipoDano = "perfurante", Preco = "10 PO", ProficienciaRequerida = "Espadas curtas", Propriedades = new List<string> { "Acuidade", "Leve" } },
+                new Equipamento { Id = 14, Nome = "10 Dardos", TipoEquipamento = "Arma", Peso = 1.0, Dano = "1d4", TipoDano = "perfurante", Preco = "5 PP", ProficienciaRequerida = "Armas simples", Propriedades = new List<string> { "Arremesso", "Distância (6/18)" } },
+                new Equipamento { Id = 15, Nome = "Armadura de Couro", TipoEquipamento = "Armadura", Peso = 4.5, ClasseArmadura = 11, PermiteDestreza = true, ForcaRequerida = 0, DesvantagemFurtividade = false, Preco = "10 PO", ProficienciaRequerida = "Armaduras leves", Descricao = "O peito e os ombros desta armadura são feitos de couro curtido amaciado sob medida." }
+            );
+            db.SaveChanges();
+        }
+
+        // Custom seed for Monge's available skills
+        if (!db.ClassesPericiasDisponiveis.Any(cpd => cpd.IdClasse == 2))
+        {
+            db.ClassesPericiasDisponiveis.AddRange(
+                new ClassePericiaDisponivel { IdClasse = 2, IdPericia = 1 },  // Acrobacia
+                new ClassePericiaDisponivel { IdClasse = 2, IdPericia = 4 },  // Atletismo
+                new ClassePericiaDisponivel { IdClasse = 2, IdPericia = 7 },  // Furtividade
+                new ClassePericiaDisponivel { IdClasse = 2, IdPericia = 8 },  // História
+                new ClassePericiaDisponivel { IdClasse = 2, IdPericia = 10 }, // Intuição
+                new ClassePericiaDisponivel { IdClasse = 2, IdPericia = 17 }  // Religião
+            );
+            db.SaveChanges();
+        }
     }
     catch (Exception ex)
     {
@@ -75,6 +105,13 @@ app.MapGet("/api/personagens", async (AppDbContext db) =>
     return Results.Ok(personagens);
 })
 .WithName("GetPersonagens");
+
+app.MapGet("/api/personagens/check-nome", async (string nome, AppDbContext db) =>
+{
+    var exists = await db.Personagens.AnyAsync(p => p.Nome.ToLower() == nome.ToLower().Trim());
+    return Results.Ok(new { exists });
+})
+.WithName("CheckPersonagemNome");
 
 app.MapGet("/api/personagens/{codigo}", async (string codigo, AppDbContext db) =>
 {
@@ -733,6 +770,105 @@ app.MapGet("/api/pericias", async (AppDbContext db) =>
 })
 .WithName("GetPericias");
 
+app.MapGet("/api/equipamentos", async (AppDbContext db) =>
+{
+    var equipamentos = await db.Equipamentos.AsNoTracking().OrderBy(e => e.Nome).ToListAsync();
+    return Results.Ok(equipamentos);
+})
+.WithName("GetEquipamentos");
+
+app.MapGet("/api/racas", async (AppDbContext db) =>
+{
+    var racas = await db.Racas.AsNoTracking()
+        .Include(r => r.TracosRaciais)
+        .OrderBy(r => r.Nome)
+        .Select(r => new {
+            r.Id,
+            r.Nome,
+            r.Descricao,
+            r.TipoCriatura,
+            r.Tamanho,
+            r.Deslocamento,
+            TracosRaciais = r.TracosRaciais.Select(t => new {
+                t.Id,
+                t.Nome,
+                t.Descricao
+            }).ToList()
+        })
+        .ToListAsync();
+    return Results.Ok(racas);
+})
+.WithName("GetRacasList");
+
+app.MapGet("/api/magias", async (AppDbContext db) =>
+{
+    var magias = await db.Magias.AsNoTracking().ToListAsync();
+    return Results.Ok(magias);
+})
+.WithName("GetMagiasList");
+
+app.MapGet("/api/classes", async (AppDbContext db) =>
+{
+    var classes = await db.Classes.AsNoTracking()
+        .Where(c => c.IdClassePai == null)
+        .Select(c => new {
+            c.Id,
+            c.Nome,
+            c.DadoVida,
+            c.QtdPericiasEscolha,
+            PericiasDisponiveis = db.ClassesPericiasDisponiveis
+                .Where(cpd => cpd.IdClasse == c.Id)
+                .Select(cpd => new {
+                    cpd.Pericia.Id,
+                    cpd.Pericia.Nome,
+                    cpd.Pericia.ModificadorAtributo
+                }).ToList(),
+            Caracteristicas = db.CaracteristicasClasses
+                .Where(car => car.IdClasse == c.Id)
+                .OrderBy(car => car.Nivel)
+                .ThenBy(car => car.Nome)
+                .Select(car => new {
+                    car.Id,
+                    car.Nivel,
+                    car.Nome,
+                    car.Descricao
+                }).ToList(),
+            Subclasses = db.Classes
+                .Where(s => s.IdClassePai == c.Id)
+                .Select(s => new {
+                    s.Id,
+                    s.Nome,
+                    Caracteristicas = db.CaracteristicasClasses
+                        .Where(car => car.IdClasse == s.Id)
+                        .OrderBy(car => car.Nivel)
+                        .ThenBy(car => car.Nome)
+                        .Select(car => new {
+                            car.Id,
+                            car.Nivel,
+                            car.Nome,
+                            car.Descricao
+                        }).ToList()
+                })
+                .OrderBy(s => s.Nome)
+                .ToList(),
+            Progressoes = db.ClasseProgressoes
+                .Where(cp => cp.IdClasse == c.Id)
+                .OrderBy(cp => cp.Nivel)
+                .Select(cp => new {
+                    cp.Nivel,
+                    cp.BonusProficiencia,
+                    cp.TruquesConhecidos,
+                    cp.MagiasConhecidas,
+                    cp.EspacosMagia,
+                    cp.NivelMagia
+                }).ToList()
+        })
+        .OrderBy(x => x.Nome)
+        .ToListAsync();
+    return Results.Ok(classes);
+})
+.WithName("GetClassesList");
+
 app.MapPost("/api/personagens", async (PersonagemDto dto, AppDbContext db) =>
 {
     if (string.IsNullOrWhiteSpace(dto.Nome) || string.IsNullOrWhiteSpace(dto.Codigo) ||
@@ -742,10 +878,10 @@ app.MapPost("/api/personagens", async (PersonagemDto dto, AppDbContext db) =>
         return Results.BadRequest(new { Message = "Nome, Código, Raça, Classe e Subclasse são obrigatórios." });
     }
 
-    var exists = await db.Personagens.AnyAsync(p => p.Codigo.ToLower() == dto.Codigo.ToLower());
+    var exists = await db.Personagens.AnyAsync(p => p.Nome.ToLower() == dto.Nome.ToLower() || p.Codigo.ToLower() == dto.Codigo.ToLower());
     if (exists)
     {
-        return Results.Conflict(new { Message = $"Já existe um personagem com o código '{dto.Codigo}'." });
+        return Results.Conflict(new { Message = $"Já existe um personagem com o nome '{dto.Nome}' ou o código '{dto.Codigo}'." });
     }
 
     var racaDb = await db.Racas.FirstOrDefaultAsync(r => r.Nome.ToLower() == dto.Raca.ToLower());
@@ -817,9 +953,94 @@ app.MapPost("/api/personagens", async (PersonagemDto dto, AppDbContext db) =>
         IdPersonagem = personagem.Id,
         IdClasse = classeDb.Id,
         IdSubclasse = subclasseDb.Id,
-        Nivel = dto.Nivel > 0 ? dto.Nivel : 1
+        Nivel = dto.Nivel > 0 ? dto.Nivel : 1,
+        SubclasseEscolha = dto.SubclasseEscolha
     };
     db.ClassesPersonagens.Add(cp);
+
+    // Salvar perícias escolhidas
+    if (dto.PericiasEscolhidas != null)
+    {
+        foreach (var periciaId in dto.PericiasEscolhidas)
+        {
+            db.PersonagensPericias.Add(new PersonagemPericia
+            {
+                IdPersonagem = personagem.Id,
+                IdPericia = periciaId,
+                IsProficiente = true,
+                IsMaestria = false,
+                Origem = $"Classe ({classeDb.Nome})"
+            });
+        }
+    }
+
+    // Salvar equipamentos iniciais escolhidos
+    if (dto.EquipamentosEscolhidos != null)
+    {
+        foreach (var equipId in dto.EquipamentosEscolhidos)
+        {
+            db.PersonagensEquipamentos.Add(new PersonagemEquipamento
+            {
+                IdPersonagem = personagem.Id,
+                IdEquipamento = equipId,
+                IsEquipado = false
+            });
+        }
+    }
+
+    // Ação básica de "Soco"
+    db.AcoesPersonagens.Add(new AcaoPersonagem
+    {
+        IdPersonagem = personagem.Id,
+        Nome = "Soco",
+        TipoAcao = "Ação",
+        Alcance = "1.5m / 5ft",
+        BonusAcerto = "+1",
+        Dano = "1",
+        TipoDano = "Impacto",
+        Descricao = "Ataque desarmado básico."
+    });
+
+    // Auto-população de proficiências e salvaguardas da classe
+    if (classeDb.Nome.ToLower() == "bruxo")
+    {
+        db.PersonagensSalvaguardas.Add(new PersonagemSalvaguarda { IdPersonagem = personagem.Id, Atributo = "Sabedoria", IsProficiente = true });
+        db.PersonagensSalvaguardas.Add(new PersonagemSalvaguarda { IdPersonagem = personagem.Id, Atributo = "Carisma", IsProficiente = true });
+
+        db.PersonagensProficiencias.Add(new PersonagemProficiencia { IdPersonagem = personagem.Id, Tipo = "Arma", Nome = "Armas simples", Origem = "Classe (Bruxo)" });
+        db.PersonagensProficiencias.Add(new PersonagemProficiencia { IdPersonagem = personagem.Id, Tipo = "Armadura", Nome = "Armaduras leves", Origem = "Classe (Bruxo)" });
+        db.PersonagensProficiencias.Add(new PersonagemProficiencia { IdPersonagem = personagem.Id, Tipo = "Ferramenta", Nome = "Nenhuma", Origem = "Classe (Bruxo)" });
+    }
+    else if (classeDb.Nome.ToLower() == "monge")
+    {
+        db.PersonagensSalvaguardas.Add(new PersonagemSalvaguarda { IdPersonagem = personagem.Id, Atributo = "Força", IsProficiente = true });
+        db.PersonagensSalvaguardas.Add(new PersonagemSalvaguarda { IdPersonagem = personagem.Id, Atributo = "Destreza", IsProficiente = true });
+
+        db.PersonagensProficiencias.Add(new PersonagemProficiencia { IdPersonagem = personagem.Id, Tipo = "Arma", Nome = "Armas simples", Origem = "Classe (Monge)" });
+        db.PersonagensProficiencias.Add(new PersonagemProficiencia { IdPersonagem = personagem.Id, Tipo = "Arma", Nome = "Espadas curtas", Origem = "Classe (Monge)" });
+        db.PersonagensProficiencias.Add(new PersonagemProficiencia { IdPersonagem = personagem.Id, Tipo = "Ferramenta", Nome = "Instrumento musical ou Ferramenta de artesão", Origem = "Classe (Monge)" });
+    }
+
+    // Idiomas automáticos
+    db.PersonagensIdiomas.Add(new PersonagemIdioma { IdPersonagem = personagem.Id, IdIdioma = 1 }); // Comum
+    if (racaDb.Nome.ToLower() == "eladrin")
+    {
+        db.PersonagensIdiomas.Add(new PersonagemIdioma { IdPersonagem = personagem.Id, IdIdioma = 3 }); // Élfico
+    }
+
+    // Associação de magias escolhidas
+    if (dto.MagiasEscolhidas != null)
+    {
+        foreach (var magiaId in dto.MagiasEscolhidas)
+        {
+            db.PersonagensMagias.Add(new PersonagemMagia
+            {
+                IdPersonagem = personagem.Id,
+                IdMagia = magiaId
+            });
+        }
+    }
+
     await db.SaveChangesAsync();
 
     return Results.Created($"/api/personagens/{personagem.Codigo}", new
@@ -983,5 +1204,9 @@ public record PersonagemDto(
     int Sabedoria = 10,
     int Carisma = 10,
     int VidaMaxima = 10,
-    int VidaAtual = 10
+    int VidaAtual = 10,
+    string? SubclasseEscolha = null,
+    List<int>? PericiasEscolhidas = null,
+    List<int>? EquipamentosEscolhidos = null,
+    List<int>? MagiasEscolhidas = null
 );
